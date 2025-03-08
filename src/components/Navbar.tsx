@@ -1,49 +1,58 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { ChartBar, Search, Map } from 'lucide-react';
+import { Menu, MapPin, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useMobile } from '@/hooks/use-mobile';
 
 const Navbar = () => {
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const isMobile = useMobile();
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 glass border-b backdrop-blur-lg animate-fade-in">
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        <Link to="/" className="flex items-center space-x-2">
-          <ChartBar className="w-6 h-6 text-primary" />
-          <span className="font-semibold text-lg">GeoAnalytica</span>
-        </Link>
-        
-        <div className="relative hidden md:block max-w-sm w-full">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-muted-foreground" />
+    <header className="bg-background/80 backdrop-blur-md sticky top-0 z-50 border-b">
+      <div className="container mx-auto px-4">
+        <div className="flex h-16 items-center justify-between">
+          <div className="flex items-center">
+            <MapPin className="h-6 w-6 text-primary mr-2" />
+            <span className="text-xl font-bold">Place Trends</span>
           </div>
-          <input
-            type="text"
-            placeholder="Search for a location..."
-            className="w-full pl-10 pr-4 py-1.5 text-sm bg-secondary/60 rounded-full border-0 focus:ring-2 focus:ring-primary/20 focus:outline-none"
-          />
-        </div>
-        
-        <nav className="hidden md:flex items-center space-x-6">
-          <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">
-            Dashboard
-          </Link>
-          <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">
-            Explore
-          </Link>
-          <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">
-            Compare
-          </Link>
-          <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">
-            About
-          </Link>
-        </nav>
-        
-        <div className="flex md:hidden">
-          <button className="text-muted-foreground hover:text-foreground">
-            <Search className="h-5 w-5" />
-          </button>
+          
+          {!isMobile ? (
+            <nav className="flex items-center space-x-6">
+              <a href="#" className="text-sm font-medium hover:text-primary transition-colors">Dashboard</a>
+              <a href="#" className="text-sm font-medium hover:text-primary transition-colors">Maps</a>
+              <a href="#" className="text-sm font-medium hover:text-primary transition-colors">Comparisons</a>
+              <a href="#" className="text-sm font-medium hover:text-primary transition-colors">About</a>
+              <Button size="sm">Sign In</Button>
+            </nav>
+          ) : (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </Button>
+          )}
         </div>
       </div>
+      
+      {/* Mobile Menu */}
+      {isMobile && isMenuOpen && (
+        <div className="container mx-auto px-4 pb-4">
+          <nav className="flex flex-col space-y-4">
+            <a href="#" className="text-sm font-medium hover:text-primary transition-colors">Dashboard</a>
+            <a href="#" className="text-sm font-medium hover:text-primary transition-colors">Maps</a>
+            <a href="#" className="text-sm font-medium hover:text-primary transition-colors">Comparisons</a>
+            <a href="#" className="text-sm font-medium hover:text-primary transition-colors">About</a>
+            <Button size="sm" className="w-full">Sign In</Button>
+          </nav>
+        </div>
+      )}
     </header>
   );
 };
