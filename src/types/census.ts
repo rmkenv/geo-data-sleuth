@@ -12,7 +12,10 @@ export type VariableCategory =
   | 'Education' 
   | 'Housing' 
   | 'Demographics' 
-  | 'Employment';
+  | 'Race & Ethnicity'
+  | 'Employment'
+  | 'Transportation'
+  | 'Internet Access';
 
 export interface CensusData {
   geoid: string;

@@ -24,7 +24,9 @@ import {
   GraduationCap, 
   DollarSign, 
   Users, 
-  Briefcase 
+  Briefcase,
+  Car,
+  Wifi
 } from 'lucide-react';
 
 const getCategoryIcon = (category: string) => {
@@ -37,8 +39,14 @@ const getCategoryIcon = (category: string) => {
       return <Home className="w-4 h-4" />;
     case 'Demographics':
       return <Users className="w-4 h-4" />;
+    case 'Race & Ethnicity':
+      return <Users className="w-4 h-4" />;
     case 'Employment':
       return <Briefcase className="w-4 h-4" />;
+    case 'Transportation':
+      return <Car className="w-4 h-4" />;
+    case 'Internet Access':
+      return <Wifi className="w-4 h-4" />;
     default:
       return <BarChart3 className="w-4 h-4" />;
   }
@@ -68,7 +76,7 @@ const Dashboard = () => {
       
       {/* Category Tabs */}
       <Tabs defaultValue={categories[0]} value={selectedCategory} onValueChange={(v: any) => setSelectedCategory(v)}>
-        <div className="mb-6">
+        <div className="mb-6 overflow-x-auto">
           <TabsList className="bg-muted/50 p-1">
             {categories.map(category => (
               <TabsTrigger 

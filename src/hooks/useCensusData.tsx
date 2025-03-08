@@ -66,7 +66,6 @@ export function useComparisonData(
       try {
         const results = await Promise.all(
           years.map(async (year) => {
-            // Fix: Pass the year as the first parameter to buildCensusUrl and [variableId] as the second parameter
             const url = buildCensusUrl(year, [variableId], geographyType, regionCode);
             const response = await fetch(url);
             

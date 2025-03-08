@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Loader from './Loader';
 import { formatValue } from '@/lib/census';
-import { MapContainer, TileLayer, GeoJSON, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -114,22 +114,25 @@ const Map = ({ data, variable, format, isLoading = false, title = 'Geographic Di
         ) : (
           <div className="h-full w-full">
             <MapContainer 
-              center={[39.8283, -98.5795]} 
-              zoom={3.5} 
               style={{ height: '100%', width: '100%', borderRadius: '0 0 0.5rem 0.5rem' }}
+              center={[39.8283, -98.5795] as L.LatLngExpression}
+              zoom={3.5}
+              scrollWheelZoom={false}
               zoomControl={true}
               attributionControl={true}
-              scrollWheelZoom={false}
             >
               <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               />
               {usGeoJson && (
                 <GeoJSON 
-                  data={usGeoJson} 
-                  style={getStateStyle}
-                  onEachFeature={onEachFeature}
+                  key={variable} // Add key to force re-render when variable changes
+                  data={usGeoJson}
+                  pathOptions={(feature) => getStateStyle(feature)}
+                  eventHandlers={{
+                    each: (feature, layer) => onEachFeature(feature, layer)
+                  }}
                 />
               )}
             </MapContainer>

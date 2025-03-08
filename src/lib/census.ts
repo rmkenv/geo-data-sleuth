@@ -1,8 +1,7 @@
 
 import { CensusVariable, VariableCategory } from "@/types/census";
 
-// Census API key - in a real app, this would be stored securely
-// For demo purposes, we'll use a free API key that doesn't require authentication
+// API Base URL - in a real app, this would be stored securely
 const API_BASE_URL = 'https://api.census.gov/data';
 
 export const GEOGRAPHY_LEVELS = [
@@ -41,14 +40,34 @@ export const CENSUS_VARIABLES: CensusVariable[] = [
   { id: 'B01001_002E', name: 'Male Population', description: 'Male population', category: 'Demographics', format: 'number' },
   { id: 'B01001_026E', name: 'Female Population', description: 'Female population', category: 'Demographics', format: 'number' },
   { id: 'B01002_001E', name: 'Median Age', description: 'Median age', category: 'Demographics', format: 'number' },
-  { id: 'B03002_003E', name: 'White Population', description: 'White alone population', category: 'Demographics', format: 'number' },
+  
+  // Race and Ethnicity variables (replacing single White Population metric)
+  { id: 'B03002_003E', name: 'White Population', description: 'White alone population', category: 'Race & Ethnicity', format: 'number' },
+  { id: 'B03002_004E', name: 'Black Population', description: 'Black or African American alone population', category: 'Race & Ethnicity', format: 'number' },
+  { id: 'B03002_006E', name: 'Asian Population', description: 'Asian alone population', category: 'Race & Ethnicity', format: 'number' },
+  { id: 'B03002_012E', name: 'Hispanic Population', description: 'Hispanic or Latino population of any race', category: 'Race & Ethnicity', format: 'number' },
+  { id: 'B03002_005E', name: 'Native American Population', description: 'American Indian and Alaska Native alone population', category: 'Race & Ethnicity', format: 'number' },
   
   // Employment variables
   { id: 'B23025_001E', name: 'Employment Status Population', description: 'Population 16 years and over', category: 'Employment', format: 'number' },
   { id: 'B23025_002E', name: 'Labor Force', description: 'In labor force', category: 'Employment', format: 'number' },
   { id: 'B23025_004E', name: 'Civilian Employed', description: 'Civilian labor force employed', category: 'Employment', format: 'number' },
   { id: 'B23025_005E', name: 'Civilian Unemployed', description: 'Civilian labor force unemployed', category: 'Employment', format: 'number' },
-  { id: 'B23025_007E', name: 'Not in Labor Force', description: 'Not in labor force', category: 'Employment', format: 'number' }
+  { id: 'B23025_007E', name: 'Not in Labor Force', description: 'Not in labor force', category: 'Employment', format: 'number' },
+  
+  // Transportation variables (new)
+  { id: 'B08301_001E', name: 'Total Commuters', description: 'Workers 16 years and over', category: 'Transportation', format: 'number' },
+  { id: 'B08301_003E', name: 'Drive Alone Commuters', description: 'Car, truck, or van - drove alone', category: 'Transportation', format: 'number' },
+  { id: 'B08301_004E', name: 'Carpool Commuters', description: 'Car, truck, or van - carpooled', category: 'Transportation', format: 'number' },
+  { id: 'B08301_010E', name: 'Public Transit Commuters', description: 'Public transportation (excluding taxicab)', category: 'Transportation', format: 'number' },
+  { id: 'B08301_019E', name: 'Work From Home', description: 'Worked from home', category: 'Transportation', format: 'number' },
+  
+  // Internet Access variables (new)
+  { id: 'B28002_001E', name: 'Total Households (Internet)', description: 'Total households surveyed for internet access', category: 'Internet Access', format: 'number' },
+  { id: 'B28002_002E', name: 'Households With Internet', description: 'Households with an Internet subscription', category: 'Internet Access', format: 'number' },
+  { id: 'B28002_004E', name: 'Broadband Households', description: 'Households with a broadband Internet subscription', category: 'Internet Access', format: 'number' },
+  { id: 'B28002_013E', name: 'No Internet Access', description: 'Households without Internet access', category: 'Internet Access', format: 'number' },
+  { id: 'B28002_012E', name: 'Cellular Data Only', description: 'Households with cellular data plan only and no other type of Internet', category: 'Internet Access', format: 'number' }
 ];
 
 // Get dataset name for a given year
@@ -157,7 +176,7 @@ export const getVariablesByCategory = (category: VariableCategory) => {
 
 // Get all variable categories
 export const getAllCategories = (): VariableCategory[] => {
-  return ['Income', 'Education', 'Housing', 'Demographics', 'Employment'];
+  return ['Income', 'Education', 'Housing', 'Demographics', 'Race & Ethnicity', 'Employment', 'Transportation', 'Internet Access'];
 };
 
 // Get variable by ID
