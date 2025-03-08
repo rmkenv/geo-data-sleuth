@@ -11,11 +11,12 @@ const Index = () => {
       <Navbar />
       <main>
         <HeroSection />
-        <div className="container mx-auto px-4 mt-8 mb-16 grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-3">
-            <Dashboard />
-          </div>
-          <div className="lg:col-span-1 h-[600px]">
+        <div className="container mx-auto px-4 mt-8 mb-16">
+          {/* Dashboard is now full width to emphasize the map */}
+          <Dashboard />
+          
+          {/* Chat interface moved to the bottom */}
+          <div className="mt-8 h-[400px]">
             <ChatInterface />
           </div>
         </div>

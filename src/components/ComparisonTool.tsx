@@ -8,23 +8,60 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { CENSUS_VARIABLES, formatValue } from '@/lib/census';
+import { LocationComparison } from '@/types/census';
+import { useComparisonData } from '@/hooks/useCensusData';
+import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Loader from './Loader';
+import { X } from 'lucide-react';
 
 interface ComparisonToolProps {
   data?: any[];
   isLoading?: boolean;
+  locations?: LocationComparison[];
+  onAddLocation?: (location: any) => void;
+  onRemoveLocation?: (locationId: string) => void;
 }
 
-const ComparisonTool = ({ data, isLoading = false }: ComparisonToolProps) => {
+// Color palette for different locations
+const LOCATION_COLORS = [
+  '#2563eb', '#7c3aed', '#db2777', '#ea580c', '#65a30d'
+];
+
+const ComparisonTool = ({ 
+  data, 
+  isLoading = false,
+  locations = [],
+  onAddLocation,
+  onRemoveLocation
+}: ComparisonToolProps) => {
   const [selectedVariable, setSelectedVariable] = useState(CENSUS_VARIABLES[0].id);
 
   const variable = CENSUS_VARIABLES.find(v => v.id === selectedVariable);
+  
+  // Fetch comparison data
+  const { 
+    data: comparisonData, 
+    isLoading: isLoadingComparison 
+  } = useComparisonData(locations, selectedVariable);
+  
+  // Format data for chart
+  const chartData = Object.values(comparisonData || {}).map((item: any) => {
+    if (!item || !item.data) return null;
+    
+    return {
+      name: item.name,
+      value: item.data[selectedVariable],
+      id: item.id,
+      color: item.color
+    };
+  }).filter(Boolean);
 
   return (
     <Card className="w-full overflow-hidden animate-fade-in glass">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium">Comparison Tool</CardTitle>
+        <CardTitle className="text-lg font-medium">Location Comparison</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="mb-4">
@@ -43,47 +80,84 @@ const ComparisonTool = ({ data, isLoading = false }: ComparisonToolProps) => {
           </Select>
         </div>
 
-        {isLoading ? (
+        {/* Selected Locations */}
+        <div className="mb-4">
+          <h4 className="text-sm font-medium mb-2">Comparing {locations.length} Locations</h4>
+          <div className="flex flex-wrap gap-2">
+            {locations.map((location) => (
+              <div 
+                key={location.id} 
+                className="px-2 py-1 rounded-md text-xs flex items-center gap-1"
+                style={{ backgroundColor: `${location.color}20`, color: location.color }}
+              >
+                <span>{location.name}</span>
+                <button
+                  onClick={() => onRemoveLocation && onRemoveLocation(location.id)}
+                  className="ml-1 hover:bg-background/30 rounded-full p-0.5"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            
+            {locations.length === 0 && (
+              <div className="text-xs text-muted-foreground">
+                Click on regions in the map to add them for comparison (up to 5)
+              </div>
+            )}
+          </div>
+        </div>
+
+        {(isLoading || isLoadingComparison) ? (
           <div className="h-64 flex items-center justify-center">
             <Loader />
           </div>
         ) : (
-          <div className="relative h-64 border-l border-muted mt-4">
-            {/* Placeholder for comparison chart */}
-            <div className="absolute left-0 top-0 h-full w-full">
-              <div className="flex flex-col justify-between h-full py-2">
-                <div className="pl-2 text-xs text-muted-foreground">High</div>
-                <div className="pl-2 text-xs text-muted-foreground">Low</div>
-              </div>
-            </div>
-            
-            <div className="absolute left-8 right-0 top-0 h-full flex items-end">
-              {/* Placeholder bars */}
-              <div className="flex-1 flex items-end justify-around h-full pb-6">
-                {[0.7, 0.5, 0.9, 0.6, 0.3].map((height, i) => (
-                  <div 
-                    key={i}
-                    className="relative group"
-                    style={{ height: `${height * 100}%` }}
+          <>
+            {chartData.length > 0 ? (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={[
+                      {
+                        name: 'Current',
+                        ...chartData.reduce((acc, item) => {
+                          if (item) {
+                            acc[item.id] = item.value;
+                          }
+                          return acc;
+                        }, {} as Record<string, number>)
+                      }
+                    ]}
+                    margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
                   >
-                    <div className="w-12 bg-primary/80 hover:bg-primary rounded-t-sm transition-all"></div>
-                    <div className="text-xs mt-2 absolute -rotate-45 origin-left text-muted-foreground whitespace-nowrap">
-                      Region {i + 1}
-                    </div>
-                    <div className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 bg-foreground text-background text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                      {formatValue(height * 100000, variable?.format)}
-                    </div>
-                  </div>
-                ))}
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip 
+                      formatter={(value: number) => formatValue(value, variable?.format)}
+                    />
+                    <Legend />
+                    {locations.map((location, index) => (
+                      <Line
+                        key={location.id}
+                        type="monotone"
+                        dataKey={location.id}
+                        stroke={location.color}
+                        name={location.name}
+                        strokeWidth={2}
+                      />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
-            </div>
-            
-            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
-              <div className="text-center max-w-xs">
-                Select regions and variables to compare data across geographies
+            ) : (
+              <div className="h-64 flex items-center justify-center text-muted-foreground text-sm">
+                <div className="text-center max-w-xs">
+                  Select regions on the map to compare data across locations
+                </div>
               </div>
-            </div>
-          </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>

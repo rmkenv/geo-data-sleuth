@@ -15,7 +15,8 @@ export type VariableCategory =
   | 'Race & Ethnicity'
   | 'Employment'
   | 'Transportation'
-  | 'Internet Access';
+  | 'Internet Access'
+  | 'Energy Prices';
 
 export interface CensusData {
   geoid: string;
@@ -63,4 +64,20 @@ export interface ComparisonData {
     name: string;
     value: number;
   }[];
+}
+
+export interface EnergyPriceData {
+  period: string;
+  value: number;
+  state: string;
+  sector: string;
+  type: 'electricity' | 'natural-gas';
+}
+
+export interface LocationComparison {
+  id: string;
+  name: string;
+  level: string;
+  color: string;
+  data?: Record<string, number>;
 }

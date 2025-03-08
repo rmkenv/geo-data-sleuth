@@ -4,9 +4,10 @@ import { useQuery } from '@tanstack/react-query';
 import { 
   buildCensusUrl, 
   processCensusResponse, 
-  CENSUS_VARIABLES 
+  CENSUS_VARIABLES,
+  fetchEnergyPrices
 } from '@/lib/census';
-import { CensusData } from '@/types/census';
+import { CensusData, EnergyPriceData, LocationComparison } from '@/types/census';
 
 // Get variable IDs for API request
 const variableIds = CENSUS_VARIABLES.map(v => v.id);
@@ -50,40 +51,94 @@ export function useCensusData(
   };
 }
 
-export function useComparisonData(
-  variableId: string,
-  years: number[] = [2016, 2021],
-  geographyType: string = 'state',
-  regionCode?: string
+export function useEnergyPrices(
+  state?: string,
+  months: number = 12
 ) {
-  const [comparisonData, setComparisonData] = useState<any>([]);
+  const { 
+    data: electricityData, 
+    isLoading: isLoadingElectricity, 
+    error: electricityError 
+  } = useQuery({
+    queryKey: ['energy-prices', 'electricity', state, months],
+    queryFn: () => fetchEnergyPrices('electricity', state, months),
+    staleTime: 1000 * 60 * 60 * 24, // Cache for 24 hours
+  });
+
+  const { 
+    data: gasData, 
+    isLoading: isLoadingGas, 
+    error: gasError 
+  } = useQuery({
+    queryKey: ['energy-prices', 'natural-gas', state, months],
+    queryFn: () => fetchEnergyPrices('natural-gas', state, months),
+    staleTime: 1000 * 60 * 60 * 24, // Cache for 24 hours
+  });
+
+  return {
+    electricityData,
+    gasData,
+    isLoading: isLoadingElectricity || isLoadingGas,
+    error: electricityError || gasError
+  };
+}
+
+export function useComparisonData(
+  locations: LocationComparison[],
+  variableId: string,
+  year: number = 2021
+) {
+  const [comparisonData, setComparisonData] = useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!locations.length) {
+        setComparisonData({});
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
+      setError(null);
+      
       try {
         const results = await Promise.all(
-          years.map(async (year) => {
-            const url = buildCensusUrl(year, [variableId], geographyType, regionCode);
+          locations.map(async (location) => {
+            const url = buildCensusUrl(
+              year, 
+              [variableId], 
+              location.level, 
+              location.id
+            );
+            
             const response = await fetch(url);
             
             if (!response.ok) {
-              throw new Error(`Failed to fetch census data for ${year}`);
+              throw new Error(`Failed to fetch data for ${location.name}`);
             }
             
             const data = await response.json();
             const processed = processCensusResponse(data, [variableId]);
             
             return {
-              year,
-              data: processed
+              id: location.id,
+              name: location.name,
+              level: location.level,
+              color: location.color,
+              data: processed.length > 0 ? processed[0] : null
             };
           })
         );
         
-        setComparisonData(results);
+        // Convert array to object with location ids as keys
+        const dataObj = results.reduce((acc, item) => {
+          acc[item.id] = item;
+          return acc;
+        }, {} as Record<string, any>);
+        
+        setComparisonData(dataObj);
         setIsLoading(false);
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Unknown error'));
@@ -92,7 +147,7 @@ export function useComparisonData(
     };
 
     fetchData();
-  }, [variableId, years, geographyType, regionCode]);
+  }, [locations, variableId, year]);
 
   return { data: comparisonData, isLoading, error };
 }

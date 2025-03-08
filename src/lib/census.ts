@@ -1,13 +1,13 @@
 
-import { CensusVariable, VariableCategory } from "@/types/census";
+import { CensusVariable, VariableCategory, EnergyPriceData } from "@/types/census";
 
 // API Base URL - in a real app, this would be stored securely
 const API_BASE_URL = 'https://api.census.gov/data';
+const EIA_API_KEY = 'DEMO_KEY'; // Replace with actual key in production
 
 export const GEOGRAPHY_LEVELS = [
   { id: 'state', name: 'State', description: 'U.S. States and Territories' },
   { id: 'county', name: 'County', description: 'Counties and County Equivalents' },
-  { id: 'metro', name: 'Metro Area', description: 'Metropolitan and Micropolitan Statistical Areas' },
   { id: 'place', name: 'Place', description: 'Cities, Towns, and Census Designated Places' },
   { id: 'zcta', name: 'ZIP Code', description: 'ZIP Code Tabulation Areas' }
 ];
@@ -41,7 +41,7 @@ export const CENSUS_VARIABLES: CensusVariable[] = [
   { id: 'B01001_026E', name: 'Female Population', description: 'Female population', category: 'Demographics', format: 'number' },
   { id: 'B01002_001E', name: 'Median Age', description: 'Median age', category: 'Demographics', format: 'number' },
   
-  // Race and Ethnicity variables (replacing single White Population metric)
+  // Race and Ethnicity variables
   { id: 'B03002_003E', name: 'White Population', description: 'White alone population', category: 'Race & Ethnicity', format: 'number' },
   { id: 'B03002_004E', name: 'Black Population', description: 'Black or African American alone population', category: 'Race & Ethnicity', format: 'number' },
   { id: 'B03002_006E', name: 'Asian Population', description: 'Asian alone population', category: 'Race & Ethnicity', format: 'number' },
@@ -55,19 +55,25 @@ export const CENSUS_VARIABLES: CensusVariable[] = [
   { id: 'B23025_005E', name: 'Civilian Unemployed', description: 'Civilian labor force unemployed', category: 'Employment', format: 'number' },
   { id: 'B23025_007E', name: 'Not in Labor Force', description: 'Not in labor force', category: 'Employment', format: 'number' },
   
-  // Transportation variables (new)
+  // Transportation variables
   { id: 'B08301_001E', name: 'Total Commuters', description: 'Workers 16 years and over', category: 'Transportation', format: 'number' },
   { id: 'B08301_003E', name: 'Drive Alone Commuters', description: 'Car, truck, or van - drove alone', category: 'Transportation', format: 'number' },
   { id: 'B08301_004E', name: 'Carpool Commuters', description: 'Car, truck, or van - carpooled', category: 'Transportation', format: 'number' },
   { id: 'B08301_010E', name: 'Public Transit Commuters', description: 'Public transportation (excluding taxicab)', category: 'Transportation', format: 'number' },
   { id: 'B08301_019E', name: 'Work From Home', description: 'Worked from home', category: 'Transportation', format: 'number' },
   
-  // Internet Access variables (new)
+  // Internet Access variables
   { id: 'B28002_001E', name: 'Total Households (Internet)', description: 'Total households surveyed for internet access', category: 'Internet Access', format: 'number' },
   { id: 'B28002_002E', name: 'Households With Internet', description: 'Households with an Internet subscription', category: 'Internet Access', format: 'number' },
   { id: 'B28002_004E', name: 'Broadband Households', description: 'Households with a broadband Internet subscription', category: 'Internet Access', format: 'number' },
   { id: 'B28002_013E', name: 'No Internet Access', description: 'Households without Internet access', category: 'Internet Access', format: 'number' },
-  { id: 'B28002_012E', name: 'Cellular Data Only', description: 'Households with cellular data plan only and no other type of Internet', category: 'Internet Access', format: 'number' }
+  { id: 'B28002_012E', name: 'Cellular Data Only', description: 'Households with cellular data plan only and no other type of Internet', category: 'Internet Access', format: 'number' },
+  
+  // Energy Price variables
+  { id: 'ELEC_PRICE', name: 'Residential Electricity Price', description: 'Average residential electricity price (cents/kWh)', category: 'Energy Prices', format: 'currency' },
+  { id: 'GAS_PRICE', name: 'Residential Natural Gas Price', description: 'Average residential natural gas price ($/thousand cubic feet)', category: 'Energy Prices', format: 'currency' },
+  { id: 'ELEC_PRICE_YOY', name: 'Electricity Price YoY Change', description: 'Year-over-year change in electricity prices', category: 'Energy Prices', format: 'percent' },
+  { id: 'GAS_PRICE_YOY', name: 'Natural Gas Price YoY Change', description: 'Year-over-year change in natural gas prices', category: 'Energy Prices', format: 'percent' },
 ];
 
 // Get dataset name for a given year
@@ -169,6 +175,90 @@ export const processCensusResponse = (data: any[], variables: string[]) => {
   });
 };
 
+// Fetch energy prices from EIA API
+export const fetchEnergyPrices = async (
+  type: 'electricity' | 'natural-gas',
+  stateCode?: string,
+  months: number = 12
+): Promise<EnergyPriceData[]> => {
+  try {
+    // Construct URL based on energy type and parameters
+    let url: string;
+    if (type === 'electricity') {
+      url = `https://api.eia.gov/v2/electricity/retail-sales/data/?api_key=${EIA_API_KEY}&frequency=monthly&data[]=price&facets[sectorid][]=RES&start=-${months}`;
+      if (stateCode) {
+        url += `&facets[stateid][]=${stateCode}`;
+      }
+    } else {
+      url = `https://api.eia.gov/v2/natural-gas/pri/sum/data/?api_key=${EIA_API_KEY}&frequency=monthly&data[]=price&facets[sectorid][]=RES&start=-${months}`;
+      if (stateCode) {
+        url += `&facets[stateid][]=${stateCode}`;
+      }
+    }
+    
+    // Fetch data from EIA API
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${type} data from EIA API`);
+    }
+    
+    const data = await response.json();
+    
+    // Mock data structure for development until API key is properly set up
+    if (!data.response || !data.response.data) {
+      // Return mock data for demonstration purposes
+      return generateMockEnergyData(type, stateCode, months);
+    }
+    
+    // Process the API response
+    return data.response.data.map((item: any) => ({
+      period: item.period,
+      value: Number(item.price),
+      state: item.stateid || 'US',
+      sector: item.sectorid,
+      type
+    }));
+  } catch (error) {
+    console.error(`Error fetching ${type} prices:`, error);
+    // Return mock data in case of error for development
+    return generateMockEnergyData(type, stateCode, months);
+  }
+};
+
+// Generate mock energy data for development
+const generateMockEnergyData = (
+  type: 'electricity' | 'natural-gas',
+  stateCode?: string,
+  months: number = 12
+): EnergyPriceData[] => {
+  const data: EnergyPriceData[] = [];
+  const basePrice = type === 'electricity' ? 13.5 : 15.2; // cents/kWh or $/thousand cubic feet
+  const state = stateCode || 'US';
+  
+  // Generate last X months of data
+  for (let i = 0; i < months; i++) {
+    const date = new Date();
+    date.setMonth(date.getMonth() - i);
+    const period = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    
+    // Add some random variation
+    const randomFactor = 0.95 + (Math.random() * 0.2);
+    const value = basePrice * randomFactor * (1 + (i * 0.01)); // Slight upward trend
+    
+    data.push({
+      period,
+      value,
+      state,
+      sector: 'RES',
+      type
+    });
+  }
+  
+  // Sort by date ascending
+  return data.sort((a, b) => a.period.localeCompare(b.period));
+};
+
 // Get variables by category
 export const getVariablesByCategory = (category: VariableCategory) => {
   return CENSUS_VARIABLES.filter(variable => variable.category === category);
@@ -176,7 +266,7 @@ export const getVariablesByCategory = (category: VariableCategory) => {
 
 // Get all variable categories
 export const getAllCategories = (): VariableCategory[] => {
-  return ['Income', 'Education', 'Housing', 'Demographics', 'Race & Ethnicity', 'Employment', 'Transportation', 'Internet Access'];
+  return ['Income', 'Education', 'Housing', 'Demographics', 'Race & Ethnicity', 'Employment', 'Transportation', 'Internet Access', 'Energy Prices'];
 };
 
 // Get variable by ID
