@@ -2,11 +2,11 @@
 import React from 'react';
 import { Menu, MapPin, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
 
   return (
     <header className="bg-background/80 backdrop-blur-md sticky top-0 z-50 border-b">
