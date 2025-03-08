@@ -27,7 +27,7 @@ const ChatInterface = ({ data, className }: ChatInterfaceProps) => {
   return (
     <div className={`flex flex-col h-full border rounded-lg overflow-hidden bg-card ${className}`}>
       <div className="p-4 bg-secondary font-medium border-b">
-        <h3 className="text-lg">Chat with Census Data</h3>
+        <h3 className="text-lg">Chat with Data Assistant</h3>
         <p className="text-xs text-muted-foreground">Ask questions about trends, comparisons, or specific metrics</p>
       </div>
       
@@ -60,7 +60,7 @@ const ChatInterface = ({ data, className }: ChatInterfaceProps) => {
       <div className="p-4 border-t">
         <form onSubmit={handleSubmit} className="flex space-x-2">
           <Input
-            placeholder="Ask about Census data..."
+            placeholder="Ask about demographic data..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             className="flex-1"

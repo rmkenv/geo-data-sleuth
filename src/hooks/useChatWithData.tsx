@@ -13,7 +13,7 @@ export function useChatWithData(data?: CensusData[]) {
     {
       id: '1',
       role: 'assistant',
-      content: 'Hello! I can help you analyze and understand Census data. What would you like to know?'
+      content: 'Hello! I can help you analyze and understand demographic and economic data. What would you like to know?'
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,11 +41,11 @@ export function useChatWithData(data?: CensusData[]) {
       const lowercaseMessage = message.toLowerCase();
       
       if (lowercaseMessage.includes('income') || lowercaseMessage.includes('salary')) {
-        responseContent = 'Based on the Census data, median household income varies significantly by region. Would you like me to show you specific income statistics for a particular area?';
+        responseContent = 'Based on the available data, median household income varies significantly by region. Would you like me to show you specific income statistics for a particular area?';
       } else if (lowercaseMessage.includes('education') || lowercaseMessage.includes('college')) {
         responseContent = 'Education attainment levels show interesting patterns across different regions. The data indicates variation in college graduation rates by geography and demographics.';
       } else if (lowercaseMessage.includes('housing') || lowercaseMessage.includes('home')) {
-        responseContent = 'Housing costs have been trending upward in many metropolitan areas. The Census data shows regional variations in homeownership rates and housing affordability.';
+        responseContent = 'Housing costs have been trending upward in many metropolitan areas. The data shows regional variations in homeownership rates and housing affordability.';
       } else if (lowercaseMessage.includes('demographics') || lowercaseMessage.includes('population')) {
         responseContent = 'Population demographics show changing patterns, with growing diversity in many urban areas and shifts in age distribution across regions.';
       } else if (lowercaseMessage.includes('compare') || lowercaseMessage.includes('difference')) {
@@ -53,7 +53,7 @@ export function useChatWithData(data?: CensusData[]) {
       } else if (lowercaseMessage.includes('trend') || lowercaseMessage.includes('change')) {
         responseContent = 'Looking at trends over time, there are notable shifts in population distribution, income levels, and housing costs across different regions.';
       } else {
-        responseContent = 'That\'s an interesting question about the Census data. Looking at the available information, I can help you analyze specific variables or regions if you provide more details.';
+        responseContent = 'That\'s an interesting question about the demographic data. Looking at the available information, I can help you analyze specific variables or regions if you provide more details.';
       }
       
       const aiMessage: ChatMessage = {

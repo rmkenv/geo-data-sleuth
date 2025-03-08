@@ -60,9 +60,9 @@ const Dashboard = () => {
   return (
     <section id="dashboard-content" className="container mx-auto px-4 py-12">
       <div className="mb-10">
-        <h2 className="text-3xl font-bold mb-2">Census Data Dashboard</h2>
+        <h2 className="text-3xl font-bold mb-2">Demographics & Economic Trends Dashboard</h2>
         <p className="text-muted-foreground">
-          Explore and analyze demographic data from the American Community Survey
+          Explore and analyze demographic data across the United States
         </p>
       </div>
       
