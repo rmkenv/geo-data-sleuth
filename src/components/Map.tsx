@@ -3,6 +3,23 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Loader from './Loader';
 import { formatValue } from '@/lib/census';
+import { MapContainer, TileLayer, GeoJSON, Tooltip } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix for default marker icons in Leaflet with webpack/vite
+// This is needed because Leaflet's default icons reference assets that aren't properly bundled
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
 
 interface MapProps {
   data?: any[];
@@ -12,19 +29,77 @@ interface MapProps {
   title?: string;
 }
 
-// Placeholder component for the map - in a real app, you'd use a mapping library like Mapbox or Leaflet
 const Map = ({ data, variable, format, isLoading = false, title = 'Geographic Distribution' }: MapProps) => {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const [usGeoJson, setUsGeoJson] = useState<any>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
+  // Load US GeoJSON data
   useEffect(() => {
-    // Simulate map loading
-    const timer = setTimeout(() => {
-      setIsMapLoaded(true);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
+    fetch('https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json')
+      .then(response => response.json())
+      .then(data => {
+        setUsGeoJson(data);
+        setIsMapLoaded(true);
+      })
+      .catch(error => {
+        console.error('Error loading US GeoJSON:', error);
+      });
   }, []);
+
+  // Style function for states
+  const getStateStyle = (feature: any) => {
+    if (!data || !variable) {
+      return {
+        fillColor: '#b3e5fc',
+        weight: 1,
+        opacity: 1,
+        color: 'white',
+        fillOpacity: 0.7
+      };
+    }
+
+    // Find data for this state
+    const stateData = data.find((item: any) => 
+      item.NAME && feature.properties.name && 
+      item.NAME.includes(feature.properties.name)
+    );
+
+    // Get value for choropleth
+    const value = stateData ? stateData[variable] : 0;
+    
+    // Color scale based on value (simple implementation)
+    const getColor = (val: number) => {
+      if (!val) return '#dddddd';
+      return val > 100000 ? '#084c61' :
+             val > 75000 ? '#177e89' :
+             val > 50000 ? '#39a0ab' :
+             val > 25000 ? '#6dcdb8' :
+                          '#b3e5fc';
+    };
+
+    return {
+      fillColor: getColor(value),
+      weight: 1,
+      opacity: 1,
+      color: 'white',
+      fillOpacity: 0.7
+    };
+  };
+
+  // Handle feature properties
+  const onEachFeature = (feature: any, layer: any) => {
+    if (!data || !variable) return;
+
+    const stateData = data.find((item: any) => 
+      item.NAME && feature.properties.name && 
+      item.NAME.includes(feature.properties.name)
+    );
+
+    if (stateData && stateData[variable]) {
+      const formattedValue = formatValue(stateData[variable], format);
+      layer.bindTooltip(`<strong>${feature.properties.name}</strong><br/>${formattedValue}`);
+    }
+  };
 
   return (
     <Card className="w-full h-full overflow-hidden animate-fade-in glass">
@@ -37,50 +112,41 @@ const Map = ({ data, variable, format, isLoading = false, title = 'Geographic Di
             <Loader />
           </div>
         ) : (
-          <>
-            <div className="absolute inset-0 bg-blue-50">
-              {/* Map placeholder with gradient */}
-              <div 
-                className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-50 rounded-b-lg"
-                ref={mapContainerRef}
-              >
-                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                  <p className="text-center max-w-xs">
-                    Interactive map visualization will appear here with geographic data
-                  </p>
-                </div>
-                
-                {/* State outlines (simplified placeholder) */}
-                <div className="absolute inset-0 opacity-20">
-                  <svg viewBox="0 0 800 500" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
-                    <path d="M200,100 L300,120 L350,180 L290,250 L180,240 L150,190 Z" 
-                          className="fill-primary/20 stroke-primary/40" strokeWidth="2" />
-                    <path d="M350,180 L410,160 L470,200 L450,270 L370,290 L290,250 Z" 
-                          className="fill-primary/30 stroke-primary/40" strokeWidth="2" />
-                    <path d="M180,240 L290,250 L370,290 L340,370 L220,340 L160,290 Z" 
-                          className="fill-primary/40 stroke-primary/40" strokeWidth="2" />
-                    <path d="M410,160 L520,140 L580,190 L560,260 L470,200 Z" 
-                          className="fill-primary/25 stroke-primary/40" strokeWidth="2" />
-                    <path d="M470,200 L560,260 L540,330 L450,370 L370,290 L450,270 Z" 
-                          className="fill-primary/35 stroke-primary/40" strokeWidth="2" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            
+          <div className="h-full w-full">
+            <MapContainer 
+              center={[39.8283, -98.5795]} 
+              zoom={3.5} 
+              style={{ height: '100%', width: '100%', borderRadius: '0 0 0.5rem 0.5rem' }}
+              zoomControl={true}
+              attributionControl={true}
+              scrollWheelZoom={false}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {usGeoJson && (
+                <GeoJSON 
+                  data={usGeoJson} 
+                  style={getStateStyle}
+                  onEachFeature={onEachFeature}
+                />
+              )}
+            </MapContainer>
+
             {/* Legend */}
-            <div className="absolute bottom-4 right-4 p-3 glass rounded-lg">
+            <div className="absolute bottom-4 right-4 p-3 glass rounded-lg z-[1000]">
               <div className="text-xs font-medium mb-2">Legend</div>
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-primary/20 rounded-sm"></div>
+                <div className="w-3 h-3 bg-[#b3e5fc] rounded-sm"></div>
                 <span className="text-xs">Lowest</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-primary/40 rounded-sm"></div>
+                <div className="w-3 h-3 bg-[#084c61] rounded-sm"></div>
                 <span className="text-xs">Highest</span>
               </div>
             </div>
-          </>
+          </div>
         )}
       </CardContent>
     </Card>
