@@ -1,59 +1,32 @@
 
 import React from 'react';
-import { Menu, MapPin, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { Link } from 'react-router-dom';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const Navbar = () => {
-  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
-  const isMobile = useIsMobile();
-
   return (
-    <header className="bg-background/80 backdrop-blur-md sticky top-0 z-50 border-b">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center">
-            <MapPin className="h-6 w-6 text-primary mr-2" />
-            <span className="text-xl font-bold">Place Trends</span>
-          </div>
+    <nav className="bg-primary text-white py-4">
+      <div className="container mx-auto px-4 flex justify-between items-center">
+        <div className="flex items-center space-x-4">
+          <Link to="/" className="text-xl font-bold">
+            Place Trends
+          </Link>
           
-          {!isMobile ? (
-            <nav className="flex items-center space-x-6">
-              <a href="#" className="text-sm font-medium hover:text-primary transition-colors">Dashboard</a>
-              <a href="#" className="text-sm font-medium hover:text-primary transition-colors">Maps</a>
-              <a href="#" className="text-sm font-medium hover:text-primary transition-colors">Comparisons</a>
-              <a href="#" className="text-sm font-medium hover:text-primary transition-colors">About</a>
-              <Button size="sm">Sign In</Button>
-            </nav>
-          ) : (
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </Button>
-          )}
+          <div className="hidden md:flex space-x-6">
+            <Link to="/" className="hover:text-primary-foreground/80 transition-colors">
+              Dashboard
+            </Link>
+            <Link to="/geocoding" className="hover:text-primary-foreground/80 transition-colors">
+              Address Geocoder
+            </Link>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <ThemeToggle />
         </div>
       </div>
-      
-      {/* Mobile Menu */}
-      {isMobile && isMenuOpen && (
-        <div className="container mx-auto px-4 pb-4">
-          <nav className="flex flex-col space-y-4">
-            <a href="#" className="text-sm font-medium hover:text-primary transition-colors">Dashboard</a>
-            <a href="#" className="text-sm font-medium hover:text-primary transition-colors">Maps</a>
-            <a href="#" className="text-sm font-medium hover:text-primary transition-colors">Comparisons</a>
-            <a href="#" className="text-sm font-medium hover:text-primary transition-colors">About</a>
-            <Button size="sm" className="w-full">Sign In</Button>
-          </nav>
-        </div>
-      )}
-    </header>
+    </nav>
   );
 };
 

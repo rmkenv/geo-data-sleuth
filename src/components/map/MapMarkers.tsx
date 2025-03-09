@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import L from 'leaflet';
-import { Marker, Popup } from 'react-leaflet';
+import { Marker, Popup, useMap } from 'react-leaflet';
 
 // Fix for default marker icons in Leaflet with webpack/vite
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -21,13 +21,44 @@ interface MapMarkersProps {
 }
 
 const MapMarkers = ({ searchResults }: MapMarkersProps) => {
-  if (!searchResults.length) return null;
+  const [results, setResults] = useState<any[]>(searchResults || []);
+  const map = useMap();
+  
+  // Listen for custom events with search results
+  useEffect(() => {
+    const handleSearchResults = (e: CustomEvent) => {
+      if (e.detail && Array.isArray(e.detail)) {
+        setResults(e.detail);
+        
+        // If we have results, zoom to the first one
+        if (e.detail.length > 0 && e.detail[0].center) {
+          const [lng, lat] = e.detail[0].center;
+          map.setView([lat, lng], 14);
+        }
+      }
+    };
+    
+    window.addEventListener('map-search-results', handleSearchResults as EventListener);
+    
+    return () => {
+      window.removeEventListener('map-search-results', handleSearchResults as EventListener);
+    };
+  }, [map]);
+  
+  // Update when props change
+  useEffect(() => {
+    if (searchResults && searchResults.length) {
+      setResults(searchResults);
+    }
+  }, [searchResults]);
+  
+  if (!results.length) return null;
   
   return (
     <>
-      {searchResults.map((result, index) => (
+      {results.map((result, index) => (
         <Marker
-          key={`search-result-${index}`}
+          key={`search-result-${result.id || index}`}
           position={[result.center[1], result.center[0]]}
         >
           <Popup>
