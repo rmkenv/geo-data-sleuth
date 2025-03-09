@@ -76,7 +76,7 @@ export const getDataset = (year: number) => {
   return `acs/acs5`; // Using 5-year ACS data
 };
 
-// Build the Census API URL - Modified to exclude energy price variables
+// Build the Census API URL
 export const buildCensusUrl = (
   year: number,
   variables: string[],

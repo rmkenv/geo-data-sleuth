@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { toast } from '@/components/ui/use-toast';
+import { FALLBACK_GEOJSON } from './mapConstants';
 
 interface TigerWebLayerProps {
   map: L.Map | null;
@@ -52,6 +53,9 @@ const TigerWebLayer = ({ map, selectedLayerService }: TigerWebLayerProps) => {
             description: "Using OpenStreetMap basemap only",
             variant: "default",
           });
+          
+          // Load fallback GeoJSON if TigerWeb fails
+          loadFallbackLayer(map);
         }
       });
       
@@ -60,6 +64,7 @@ const TigerWebLayer = ({ map, selectedLayerService }: TigerWebLayerProps) => {
     } catch (error) {
       console.error('Error adding TigerWeb layer:', error);
       setHasError(true);
+      loadFallbackLayer(map);
     }
 
     return () => {
@@ -70,6 +75,35 @@ const TigerWebLayer = ({ map, selectedLayerService }: TigerWebLayerProps) => {
       }
     };
   }, [map, selectedLayerService]);
+  
+  const loadFallbackLayer = (map: L.Map) => {
+    // Determine which fallback to use based on the selected layer service
+    let fallbackUrl = FALLBACK_GEOJSON.states;
+    
+    if (selectedLayerService.includes('Counties')) {
+      fallbackUrl = FALLBACK_GEOJSON.counties;
+    } else if (selectedLayerService.includes('Tracts')) {
+      fallbackUrl = FALLBACK_GEOJSON.tracts;
+    }
+    
+    // Load the fallback GeoJSON
+    fetch(fallbackUrl)
+      .then(response => response.json())
+      .then(data => {
+        const geojsonLayer = L.geoJSON(data, {
+          style: {
+            color: '#3388ff',
+            weight: 1,
+            fillOpacity: 0.1
+          }
+        }).addTo(map);
+        
+        console.log('Fallback GeoJSON layer added to map');
+      })
+      .catch(error => {
+        console.error('Error loading fallback GeoJSON:', error);
+      });
+  };
 
   return null;
 };

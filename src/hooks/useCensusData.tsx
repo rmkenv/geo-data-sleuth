@@ -1,12 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
   buildCensusUrl, 
   processCensusResponse, 
   CENSUS_VARIABLES,
-  ENERGY_PRICE_VARIABLES,
-  fetchEnergyPrices
+  ENERGY_PRICE_VARIABLES
 } from '@/lib/census';
 import { CensusData, EnergyPriceData, LocationComparison } from '@/types/census';
 

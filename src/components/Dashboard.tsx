@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Tabs, 
@@ -206,7 +207,7 @@ const Dashboard = () => {
                       description={variable.description}
                       icon={getCategoryIcon(category)}
                       isLoading={false}
-                      error={true}
+                      hasError={true}
                     />
                   ))}
                 </div>
@@ -245,7 +246,7 @@ const Dashboard = () => {
                         description={variable.description}
                         icon={getCategoryIcon(category)}
                         isLoading={category === 'Energy Prices' ? isLoadingEnergy : isLoading}
-                        error={category === 'Energy Prices' ? false : !!error}
+                        hasError={category === 'Energy Prices' ? false : !!error}
                       />
                     );
                   })}

@@ -1,12 +1,12 @@
 
-// Census TIGERweb Services - Using more reliable endpoints
+// Updated TIGERweb Services URLs - Using corrected endpoints
 export const TIGERWEB_SERVICES = {
-  states: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State/MapServer/0',
-  counties: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/County/MapServer/0',
-  tracts: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Tracts_Blocks/MapServer/0',
-  blockGroups: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Tracts_Blocks/MapServer/1',
-  blocks: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Tracts_Blocks/MapServer/10',
-  zip: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/PUMA_TAD_TAZ_UGA_ZCTA/MapServer/3'
+  states: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Census2020/MapServer/84',
+  counties: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Census2020/MapServer/86',
+  tracts: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Census2020/MapServer/28',
+  blockGroups: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Census2020/MapServer/32',
+  blocks: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Census2020/MapServer/26',
+  zip: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/26'
 };
 
 export const GEOGRAPHY_LEVELS = [
