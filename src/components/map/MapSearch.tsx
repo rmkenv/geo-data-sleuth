@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 import { CENSUS_GEOCODER } from './mapConstants';
+import { toast } from '@/components/ui/use-toast';
 
 interface MapSearchProps {
   onSearchResults: (results: any[]) => void;
@@ -22,15 +23,24 @@ const MapSearch = ({ onSearchResults }: MapSearchProps) => {
     try {
       // Using the Census Geocoder API with the provided API key
       const encodedAddress = encodeURIComponent(searchQuery);
+      
+      // For better reliability, set a timeout for the fetch request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5-second timeout
+      
       const response = await fetch(
-        `${CENSUS_GEOCODER.onelineAddress}?address=${encodedAddress}&benchmark=${CENSUS_GEOCODER.benchmark}&vintage=${CENSUS_GEOCODER.vintage}&format=json&key=${CENSUS_GEOCODER.key}`
+        `${CENSUS_GEOCODER.onelineAddress}?address=${encodedAddress}&benchmark=${CENSUS_GEOCODER.benchmark}&vintage=${CENSUS_GEOCODER.vintage}&format=json&key=${CENSUS_GEOCODER.key}`,
+        { signal: controller.signal }
       );
       
+      clearTimeout(timeoutId);
+      
       if (!response.ok) {
-        throw new Error('Search failed');
+        throw new Error(`Search failed with status ${response.status}`);
       }
       
       const data = await response.json();
+      console.log('Geocoding response:', data);
       
       // Transform Census geocoder results to match the expected format
       const transformedResults = data.result?.addressMatches?.map((match: any) => ({
@@ -41,20 +51,68 @@ const MapSearch = ({ onSearchResults }: MapSearchProps) => {
         match_type: match.tigerLine?.side || 'exact'
       })) || [];
       
+      if (transformedResults.length === 0) {
+        toast({
+          title: "No results found",
+          description: "Try a different address or format",
+          variant: "destructive",
+        });
+      }
+      
       onSearchResults(transformedResults);
     } catch (error) {
       console.error('Error during location search:', error);
-      // Fallback: Create a mock result for demonstration
-      const fallbackResult = [{
-        id: 'fallback',
-        place_name: `Results for: ${searchQuery}`,
-        text: 'Location not found or service unavailable',
-        center: [-98.5795, 39.8283], // US center [lng, lat]
-      }];
-      onSearchResults(fallbackResult);
+      
+      // Use a local geocoding fallback (simulated result)
+      // In a real app, you might use a different geocoding service as fallback
+      const localGeocodeResult = simulateGeocoding(searchQuery);
+      
+      toast({
+        title: "Census Geocoder is unavailable",
+        description: "Using local fallback geocoding",
+        variant: "warning",
+      });
+      
+      onSearchResults([localGeocodeResult]);
     } finally {
       setIsSearching(false);
     }
+  };
+
+  // Local fallback geocoding simulation function
+  const simulateGeocoding = (address: string) => {
+    const knownLocations: Record<string, [number, number]> = {
+      "washington dc": [-77.0369, 38.9072],
+      "new york": [-74.0060, 40.7128],
+      "los angeles": [-118.2437, 34.0522],
+      "chicago": [-87.6298, 41.8781],
+      "houston": [-95.3698, 29.7604],
+      "baltimore": [-76.6122, 39.2904],
+      "philadelphia": [-75.1652, 39.9526],
+      "boston": [-71.0589, 42.3601],
+      "dallas": [-96.7970, 32.7767],
+      "san francisco": [-122.4194, 37.7749],
+    };
+    
+    // Try to match the entered address with known locations
+    const lowerAddress = address.toLowerCase();
+    let coordinates: [number, number] = [-98.5795, 39.8283]; // Default to US center
+    
+    for (const [location, coords] of Object.entries(knownLocations)) {
+      if (lowerAddress.includes(location)) {
+        coordinates = coords;
+        break;
+      }
+    }
+    
+    // Create a fallback result
+    return {
+      id: 'local-' + Date.now(),
+      place_name: `Approximate location for: ${address}`,
+      text: 'Using local fallback geocoding',
+      center: coordinates, // [longitude, latitude]
+      match_type: 'approximate'
+    };
   };
 
   return (

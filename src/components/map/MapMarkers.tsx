@@ -5,6 +5,7 @@ import L from 'leaflet';
 // Fix for default marker icons
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import { toast } from '@/components/ui/use-toast';
 
 let DefaultIcon = L.icon({
   iconUrl: icon,
@@ -25,22 +26,31 @@ const MapMarkers = ({ searchResults }: MapMarkersProps) => {
     console.log('MapMarkers: Processing search results', searchResults);
 
     // Find the map instance
-    const mapContainer = document.getElementById('map-container');
-    if (!mapContainer) {
-      console.log('Map container not found');
+    const mapElements = document.querySelectorAll('.leaflet-container');
+    if (!mapElements || mapElements.length === 0) {
+      console.log('No map containers found on the page');
       return;
     }
     
-    // Access the map instance safely with type assertion
-    const mapInstance = (mapContainer as any)._leaflet_instance;
+    // Try to find the map container with _leaflet_instance
+    let mapInstance: L.Map | null = null;
+    
+    for (let i = 0; i < mapElements.length; i++) {
+      const element = mapElements[i] as any;
+      if (element._leaflet_instance) {
+        mapInstance = element._leaflet_instance;
+        break;
+      }
+    }
+    
     if (!mapInstance) {
-      console.log('Leaflet map instance not found');
+      console.error('Leaflet map instance not found');
       return;
     }
     
     // Clear existing markers
     markersRef.current.forEach(marker => {
-      mapInstance.removeLayer(marker);
+      mapInstance?.removeLayer(marker);
     });
     markersRef.current = [];
     
@@ -58,7 +68,7 @@ const MapMarkers = ({ searchResults }: MapMarkersProps) => {
           const marker = L.marker(
             [result.center[1], result.center[0]], 
             { icon: DefaultIcon }
-          ).addTo(mapInstance);
+          ).addTo(mapInstance!);
           
           // Add popup to marker
           marker.bindPopup(`
@@ -72,6 +82,11 @@ const MapMarkers = ({ searchResults }: MapMarkersProps) => {
           markersRef.current.push(marker);
         } catch (error) {
           console.error('Error adding marker:', error);
+          toast({
+            title: "Error adding marker",
+            description: "There was a problem displaying the location on the map",
+            variant: "destructive",
+          });
         }
       }
     });
@@ -87,7 +102,7 @@ const MapMarkers = ({ searchResults }: MapMarkersProps) => {
     return () => {
       if (mapInstance) {
         markersRef.current.forEach(marker => {
-          mapInstance.removeLayer(marker);
+          mapInstance?.removeLayer(marker);
         });
         markersRef.current = [];
         console.log('All markers removed');
