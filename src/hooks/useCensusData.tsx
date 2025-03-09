@@ -5,11 +5,12 @@ import {
   buildCensusUrl, 
   processCensusResponse, 
   CENSUS_VARIABLES,
+  ENERGY_PRICE_VARIABLES,
   fetchEnergyPrices
 } from '@/lib/census';
 import { CensusData, EnergyPriceData, LocationComparison } from '@/types/census';
 
-// Get variable IDs for API request
+// Get variable IDs for API request (excluding energy price variables)
 const variableIds = CENSUS_VARIABLES.map(v => v.id);
 
 export function useCensusData(
@@ -28,9 +29,11 @@ export function useCensusData(
       const url = buildCensusUrl(year, variableIds, geographyType, regionCode);
       
       try {
+        console.log('Fetching census data from:', url);
         const response = await fetch(url);
         
         if (!response.ok) {
+          console.error('Census API Error:', await response.text());
           throw new Error('Failed to fetch census data');
         }
         
@@ -63,6 +66,7 @@ export function useEnergyPrices(
     queryKey: ['energy-prices', 'electricity', state, months],
     queryFn: () => fetchEnergyPrices('electricity', state, months),
     staleTime: 1000 * 60 * 60 * 24, // Cache for 24 hours
+    retry: 1
   });
 
   const { 
@@ -73,6 +77,7 @@ export function useEnergyPrices(
     queryKey: ['energy-prices', 'natural-gas', state, months],
     queryFn: () => fetchEnergyPrices('natural-gas', state, months),
     staleTime: 1000 * 60 * 60 * 24, // Cache for 24 hours
+    retry: 1
   });
 
   return {

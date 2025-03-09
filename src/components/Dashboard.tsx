@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Tabs, 
   TabsContent, 
@@ -24,7 +23,8 @@ import {
 import { 
   getVariablesByCategory, 
   getAllCategories,
-  getVariableById
+  getVariableById,
+  ENERGY_PRICE_VARIABLES
 } from '@/lib/census';
 import Loader from './Loader';
 import { LocationComparison } from '@/types/census';
@@ -39,6 +39,7 @@ import {
   Wifi,
   Zap
 } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 const getCategoryIcon = (category: string) => {
   switch (category) {
@@ -75,10 +76,8 @@ const Dashboard = () => {
   const [region, setRegion] = useState<string | undefined>(undefined);
   const [selectedLocations, setSelectedLocations] = useState<LocationComparison[]>([]);
   
-  // Get census data
   const { data, isLoading, error } = useCensusData(selectedYear, geography, region);
   
-  // Get energy price data
   const { 
     electricityData, 
     gasData, 
@@ -88,13 +87,19 @@ const Dashboard = () => {
   const categories = getAllCategories();
   const [selectedCategory, setSelectedCategory] = useState(categories[0]);
   
-  // Get variables for selected category
-  const categoryVariables = getVariablesByCategory(selectedCategory);
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Data loading error",
+        description: "Could not load census data. Using sample data instead.",
+        variant: "destructive",
+      });
+      console.error("Census data error:", error);
+    }
+  }, [error]);
   
-  // Handle a region selection in the map
   const handleRegionSelect = (regionId: string, level: string) => {
     if (!regionId) {
-      // Clear region selection
       setRegion(undefined);
       setGeography('state');
       return;
@@ -104,15 +109,13 @@ const Dashboard = () => {
     setGeography(level);
   };
   
-  // Add a location to comparison
+  const categoryVariables = getVariablesByCategory(selectedCategory);
+  
   const handleAddLocation = (location: any) => {
-    // Check if we already have 5 locations
     if (selectedLocations.length >= 5) {
-      // Could show a toast message here
       return;
     }
     
-    // Check if this location is already selected
     if (selectedLocations.find(loc => loc.id === location.id && loc.level === location.level)) {
       return;
     }
@@ -127,7 +130,6 @@ const Dashboard = () => {
     setSelectedLocations([...selectedLocations, newLocation]);
   };
   
-  // Remove a location from comparison
   const handleRemoveLocation = (locationId: string) => {
     setSelectedLocations(selectedLocations.filter(loc => loc.id !== locationId));
   };
@@ -141,7 +143,6 @@ const Dashboard = () => {
         </p>
       </div>
       
-      {/* Map and Comparison Tool */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-10">
         <div className="lg:col-span-3 h-[600px]">
           <Map 
@@ -166,7 +167,6 @@ const Dashboard = () => {
         </div>
       </div>
       
-      {/* Category Tabs */}
       <Tabs defaultValue={categories[0]} value={selectedCategory} onValueChange={(v: any) => setSelectedCategory(v)}>
         <div className="mb-6 overflow-x-auto">
           <TabsList className="bg-muted/50 p-1">
@@ -185,22 +185,40 @@ const Dashboard = () => {
         
         {categories.map(category => (
           <TabsContent key={category} value={category} className="animate-fade-in">
-            {isLoading ? (
+            {isLoading && category !== 'Energy Prices' ? (
               <div className="flex justify-center py-20">
                 <Loader />
               </div>
-            ) : error ? (
-              <div className="text-center py-20 text-destructive">
-                <p>Error loading data. Please try again later.</p>
+            ) : category === 'Energy Prices' && isLoadingEnergy ? (
+              <div className="flex justify-center py-20">
+                <Loader />
+              </div>
+            ) : error && category !== 'Energy Prices' ? (
+              <div className="text-center py-10">
+                <p className="text-destructive mb-4">Error loading census data.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                  {categoryVariables.map((variable) => (
+                    <DataCard
+                      key={variable.id}
+                      title={variable.name}
+                      value={null}
+                      format={variable.format}
+                      description={variable.description}
+                      icon={getCategoryIcon(category)}
+                      isLoading={false}
+                      error={true}
+                    />
+                  ))}
+                </div>
               </div>
             ) : (
               <>
-                {/* Data Cards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-10">
                   {categoryVariables.map((variable) => {
-                    // Special handling for energy prices
                     let value = null;
-                    if (category === 'Energy Prices' && !isLoadingEnergy) {
+                    let hasError = false;
+                    
+                    if (category === 'Energy Prices') {
                       if (variable.id === 'ELEC_PRICE' && electricityData?.length) {
                         value = electricityData[electricityData.length - 1].value;
                       } else if (variable.id === 'GAS_PRICE' && gasData?.length) {
@@ -227,6 +245,7 @@ const Dashboard = () => {
                         description={variable.description}
                         icon={getCategoryIcon(category)}
                         isLoading={category === 'Energy Prices' ? isLoadingEnergy : isLoading}
+                        error={category === 'Energy Prices' ? false : !!error}
                       />
                     );
                   })}

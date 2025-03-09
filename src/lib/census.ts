@@ -1,4 +1,3 @@
-
 import { CensusVariable, VariableCategory, EnergyPriceData } from "@/types/census";
 
 // API Base URL and keys
@@ -62,8 +61,10 @@ export const CENSUS_VARIABLES: CensusVariable[] = [
   { id: 'B28002_004E', name: 'Broadband Households', description: 'Households with a broadband Internet subscription', category: 'Internet Access', format: 'number' },
   { id: 'B28002_013E', name: 'No Internet Access', description: 'Households without Internet access', category: 'Internet Access', format: 'number' },
   { id: 'B28002_012E', name: 'Cellular Data Only', description: 'Households with cellular data plan only and no other type of Internet', category: 'Internet Access', format: 'number' },
-  
-  // Energy Price variables
+];
+
+// Energy price variables - these will be handled separately
+export const ENERGY_PRICE_VARIABLES: CensusVariable[] = [
   { id: 'ELEC_PRICE', name: 'Residential Electricity Price', description: 'Average residential electricity price (cents/kWh)', category: 'Energy Prices', format: 'currency' },
   { id: 'GAS_PRICE', name: 'Residential Natural Gas Price', description: 'Average residential natural gas price ($/thousand cubic feet)', category: 'Energy Prices', format: 'currency' },
   { id: 'ELEC_PRICE_YOY', name: 'Electricity Price YoY Change', description: 'Year-over-year change in electricity prices', category: 'Energy Prices', format: 'percent' },
@@ -75,7 +76,7 @@ export const getDataset = (year: number) => {
   return `acs/acs5`; // Using 5-year ACS data
 };
 
-// Build the Census API URL
+// Build the Census API URL - Modified to exclude energy price variables
 export const buildCensusUrl = (
   year: number,
   variables: string[],
@@ -83,7 +84,13 @@ export const buildCensusUrl = (
   regionCode?: string
 ) => {
   const dataset = getDataset(year);
-  const variableList = ['NAME', ...variables].join(',');
+  
+  // Filter out any energy price variables that the Census API doesn't support
+  const filteredVariables = variables.filter(v => 
+    !['ELEC_PRICE', 'GAS_PRICE', 'ELEC_PRICE_YOY', 'GAS_PRICE_YOY'].includes(v)
+  );
+  
+  const variableList = ['NAME', ...filteredVariables].join(',');
   let url = `${API_BASE_URL}/${year}/${dataset}?get=${variableList}&key=${CENSUS_API_KEY}`;
   
   // Add geography filter
@@ -176,15 +183,27 @@ export const fetchEnergyPrices = async (
   months: number = 12
 ): Promise<EnergyPriceData[]> => {
   try {
+    // Get start and end dates in the correct format (YYYY-MM)
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - months);
+    
+    const formatDate = (date: Date) => {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    };
+    
+    const start = formatDate(startDate);
+    const end = formatDate(endDate);
+    
     // Construct URL based on energy type and parameters
     let url: string;
     if (type === 'electricity') {
-      url = `https://api.eia.gov/v2/electricity/retail-sales/data/?api_key=${EIA_API_KEY}&frequency=monthly&data[]=price&facets[sectorid][]=RES&start=-${months}`;
+      url = `https://api.eia.gov/v2/electricity/retail-sales/data/?api_key=${EIA_API_KEY}&frequency=monthly&data[]=value&facets[sectorid][]=RES&start=${start}&end=${end}`;
       if (stateCode) {
         url += `&facets[stateid][]=${stateCode}`;
       }
     } else {
-      url = `https://api.eia.gov/v2/natural-gas/pri/sum/data/?api_key=${EIA_API_KEY}&frequency=monthly&data[]=price&facets[sectorid][]=RES&start=-${months}`;
+      url = `https://api.eia.gov/v2/natural-gas/pri/sum/data/?api_key=${EIA_API_KEY}&frequency=monthly&data[]=value&facets[sectorid][]=RES&start=${start}&end=${end}`;
       if (stateCode) {
         url += `&facets[stateid][]=${stateCode}`;
       }
@@ -194,6 +213,7 @@ export const fetchEnergyPrices = async (
     const response = await fetch(url);
     
     if (!response.ok) {
+      console.error(`Failed to fetch ${type} data: ${response.statusText}`);
       throw new Error(`Failed to fetch ${type} data from EIA API`);
     }
     
@@ -202,13 +222,14 @@ export const fetchEnergyPrices = async (
     // Check if we have valid data structure before continuing
     if (!data.response || !data.response.data) {
       // Return mock data if API response format is unexpected
+      console.log('EIA API returned unexpected data format, using mock data');
       return generateMockEnergyData(type, stateCode, months);
     }
     
     // Process the API response
     return data.response.data.map((item: any) => ({
       period: item.period,
-      value: Number(item.price),
+      value: Number(item.value),
       state: item.stateid || 'US',
       sector: item.sectorid,
       type
@@ -216,6 +237,7 @@ export const fetchEnergyPrices = async (
   } catch (error) {
     console.error(`Error fetching ${type} prices:`, error);
     // Return mock data in case of error for development
+    console.log('Using mock energy data due to API error');
     return generateMockEnergyData(type, stateCode, months);
   }
 };
@@ -253,9 +275,9 @@ const generateMockEnergyData = (
   return data.sort((a, b) => a.period.localeCompare(b.period));
 };
 
-// Get variables by category
-export const getVariablesByCategory = (category: VariableCategory) => {
-  return CENSUS_VARIABLES.filter(variable => variable.category === category);
+// Get all variables including energy prices
+export const getAllVariables = (): CensusVariable[] => {
+  return [...CENSUS_VARIABLES, ...ENERGY_PRICE_VARIABLES];
 };
 
 // Get all variable categories
@@ -263,7 +285,15 @@ export const getAllCategories = (): VariableCategory[] => {
   return ['Income', 'Education', 'Housing', 'Demographics', 'Race & Ethnicity', 'Employment', 'Transportation', 'Internet Access', 'Energy Prices'];
 };
 
+// Get all variables by category
+export const getVariablesByCategory = (category: VariableCategory) => {
+  if (category === 'Energy Prices') {
+    return ENERGY_PRICE_VARIABLES;
+  }
+  return CENSUS_VARIABLES.filter(variable => variable.category === category);
+};
+
 // Get variable by ID
 export const getVariableById = (id: string): CensusVariable | undefined => {
-  return CENSUS_VARIABLES.find(variable => variable.id === id);
+  return [...CENSUS_VARIABLES, ...ENERGY_PRICE_VARIABLES].find(variable => variable.id === id);
 };
