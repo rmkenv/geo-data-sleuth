@@ -2,7 +2,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { TIGERWEB_SERVICES } from './mapConstants';
+import 'leaflet-draw/dist/leaflet.draw.css';
+import { TIGERWEB_SERVICES, GEOGRAPHY_LEVELS } from './mapConstants';
 import MapController from './MapController';
 import MapLegend from './MapLegend';
 import GeographyBreadcrumb from './GeographyBreadcrumb';
@@ -11,9 +12,10 @@ import MapLayerSelector from './MapLayerSelector';
 import MapMarkers from './MapMarkers';
 import GeoJsonLayer from './GeoJsonLayer';
 import { useMapData } from '@/hooks/useMapData';
-import { GEOGRAPHY_LEVELS } from './mapConstants';
 import TigerWebLayer from './TigerWebLayer';
 import MapContainer from './MapContainer';
+import LassoTool from './LassoTool';
+import { toast } from '@/components/ui/use-toast';
 
 // Fix Leaflet icon issue in production
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -41,6 +43,9 @@ const LeafletMap = ({
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedLayerService, setSelectedLayerService] = useState(TIGERWEB_SERVICES.states);
   const [leafletMap, setLeafletMap] = useState<L.Map | null>(null);
+  const [activeTool, setActiveTool] = useState('pan');
+  const [dataGranularity, setDataGranularity] = useState('tract');
+  const [areaOfInterest, setAreaOfInterest] = useState<any>(null);
   
   const mapRef = useRef<HTMLDivElement>(null);
 
@@ -136,6 +141,46 @@ const LeafletMap = ({
     }
   };
 
+  // Handle tool change
+  const handleToolChange = (tool: string) => {
+    setActiveTool(tool);
+    
+    if (tool === 'pan') {
+      // Re-enable map dragging if it was disabled
+      if (leafletMap) {
+        leafletMap.dragging.enable();
+      }
+    }
+  };
+
+  // Handle granularity change
+  const handleGranularityChange = (granularity: string) => {
+    setDataGranularity(granularity);
+    toast({
+      title: "Data granularity changed",
+      description: `Data will be displayed at ${granularity === 'zip' ? 'ZIP code' : 'Census tract'} level`,
+      variant: "default",
+    });
+  };
+
+  // Handle drawn AOI
+  const handleAreaSelected = (geojson: any) => {
+    setAreaOfInterest(geojson);
+    if (geojson) {
+      toast({
+        title: "Area of Interest selected",
+        description: "Data will populate for the selected area",
+        variant: "default",
+      });
+      
+      // Here you would trigger data fetching for the selected area
+      // This would depend on your data fetching implementation
+      
+      // For demonstration purposes, we'll just console.log the GeoJSON
+      console.log('Selected AOI:', geojson);
+    }
+  };
+
   if (!isMapLoaded) {
     return (
       <div className="flex items-center justify-center h-full w-full">
@@ -174,13 +219,19 @@ const LeafletMap = ({
                   data={data}
                   variable={variable}
                   format={format}
-                  geographyLevel={geographyLevel}
+                  geographyLevel={dataGranularity === 'zip' ? 'zip' : geographyLevel}
                   usGeoJson={usGeoJson}
                   onRegionSelect={onRegionSelect}
                 />
               )}
               
               <MapMarkers searchResults={searchResults} />
+              
+              <LassoTool 
+                map={leafletMap}
+                active={activeTool === 'lasso'}
+                onAreaSelected={handleAreaSelected}
+              />
               
               <MapController
                 map={leafletMap}
@@ -202,7 +253,11 @@ const LeafletMap = ({
       </div>
       
       <div className="absolute top-0 left-0 z-[1000] bg-white bg-opacity-90 p-2 m-2 rounded shadow-md w-64">
-        <MapSearch onSearchResults={handleSearch} />
+        <MapSearch 
+          onSearchResults={handleSearch}
+          onToolChange={handleToolChange}
+          onGranularityChange={handleGranularityChange}
+        />
       </div>
 
       <MapLegend />

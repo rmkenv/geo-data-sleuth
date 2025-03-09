@@ -1,18 +1,26 @@
-
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import { Search, Maximize2, Lasso } from 'lucide-react';
 import { CENSUS_GEOCODER } from './mapConstants';
 import { toast } from '@/components/ui/use-toast';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 interface MapSearchProps {
   onSearchResults: (results: any[]) => void;
+  onToolChange?: (tool: string) => void;
+  onGranularityChange?: (granularity: string) => void;
 }
 
-const MapSearch = ({ onSearchResults }: MapSearchProps) => {
+const MapSearch = ({ 
+  onSearchResults,
+  onToolChange,
+  onGranularityChange 
+}: MapSearchProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [activeTool, setActiveTool] = useState('pan');
+  const [granularity, setGranularity] = useState('tract');
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +85,7 @@ const MapSearch = ({ onSearchResults }: MapSearchProps) => {
       toast({
         title: "Census Geocoder is unavailable",
         description: "Using local fallback geocoding",
-        variant: "default", // Only "default" and "destructive" are allowed
+        variant: "default",
       });
       
       onSearchResults([localGeocodeResult]);
@@ -155,23 +163,78 @@ const MapSearch = ({ onSearchResults }: MapSearchProps) => {
     };
   };
 
+  const handleToolChange = (toolId: string) => {
+    setActiveTool(toolId);
+    if (onToolChange) {
+      onToolChange(toolId);
+    }
+  };
+
+  const handleGranularityChange = (value: string) => {
+    if (value) {
+      setGranularity(value);
+      if (onGranularityChange) {
+        onGranularityChange(value);
+      }
+    }
+  };
+
   return (
-    <form onSubmit={handleSearch} className="flex gap-2">
-      <Input
-        type="text"
-        placeholder="Enter an address..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        className="flex-grow"
-      />
-      <Button type="submit" size="sm" disabled={isSearching} className="px-2">
-        {isSearching ? (
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-b-transparent" />
-        ) : (
-          <Search className="h-4 w-4" />
-        )}
-      </Button>
-    </form>
+    <div className="flex flex-col gap-2">
+      <form onSubmit={handleSearch} className="flex gap-2">
+        <Input
+          type="text"
+          placeholder="Enter an address..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="flex-grow"
+        />
+        <Button type="submit" size="sm" disabled={isSearching} className="px-2">
+          {isSearching ? (
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-b-transparent" />
+          ) : (
+            <Search className="h-4 w-4" />
+          )}
+        </Button>
+      </form>
+      
+      <div className="flex justify-between items-center">
+        <div className="flex gap-1">
+          <Button
+            variant={activeTool === 'pan' ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleToolChange('pan')}
+            className="px-2 py-1 h-8"
+          >
+            <Maximize2 className="h-4 w-4 mr-1" />
+            <span className="text-xs">Pan</span>
+          </Button>
+          <Button
+            variant={activeTool === 'lasso' ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleToolChange('lasso')}
+            className="px-2 py-1 h-8"
+          >
+            <Lasso className="h-4 w-4 mr-1" />
+            <span className="text-xs">Lasso</span>
+          </Button>
+        </div>
+        
+        <ToggleGroup 
+          type="single" 
+          value={granularity}
+          onValueChange={handleGranularityChange}
+          className="gap-1"
+        >
+          <ToggleGroupItem value="zip" size="sm" className="text-xs px-2 py-1 h-8">
+            ZIP Code
+          </ToggleGroupItem>
+          <ToggleGroupItem value="tract" size="sm" className="text-xs px-2 py-1 h-8">
+            Census Tract
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+    </div>
   );
 };
 

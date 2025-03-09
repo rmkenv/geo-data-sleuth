@@ -5,7 +5,8 @@ export const TIGERWEB_SERVICES = {
   counties: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ACS2023/MapServer/82',
   tracts: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ACS2023/MapServer/8',
   blockGroups: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ACS2023/MapServer/10',
-  blocks: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ACS2023/MapServer/2'
+  blocks: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ACS2023/MapServer/2',
+  zip: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ACS2023/MapServer/84'
 };
 
 export const GEOGRAPHY_LEVELS = [
@@ -13,7 +14,8 @@ export const GEOGRAPHY_LEVELS = [
   { id: 'county', name: 'Counties', service: TIGERWEB_SERVICES.counties },
   { id: 'tract', name: 'Census Tracts', service: TIGERWEB_SERVICES.tracts },
   { id: 'blockGroup', name: 'Block Groups', service: TIGERWEB_SERVICES.blockGroups },
-  { id: 'block', name: 'Census Blocks', service: TIGERWEB_SERVICES.blocks }
+  { id: 'block', name: 'Census Blocks', service: TIGERWEB_SERVICES.blocks },
+  { id: 'zip', name: 'ZIP Codes', service: TIGERWEB_SERVICES.zip }
 ];
 
 // Census Geocoder Services
