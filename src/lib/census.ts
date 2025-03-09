@@ -1,16 +1,9 @@
-
 import { CensusVariable, VariableCategory, EnergyPriceData } from "@/types/census";
 
-// API Base URL - in a real app, this would be stored securely
+// API Base URL and keys
 const API_BASE_URL = 'https://api.census.gov/data';
+const CENSUS_API_KEY = '33ff48a144036b88ae3dcec421c8bdf908501554';
 const EIA_API_KEY = 'DEMO_KEY'; // Replace with actual key in production
-
-export const GEOGRAPHY_LEVELS = [
-  { id: 'state', name: 'State', description: 'U.S. States and Territories' },
-  { id: 'county', name: 'County', description: 'Counties and County Equivalents' },
-  { id: 'place', name: 'Place', description: 'Cities, Towns, and Census Designated Places' },
-  { id: 'zcta', name: 'ZIP Code', description: 'ZIP Code Tabulation Areas' }
-];
 
 // Key Census variables we want to highlight
 export const CENSUS_VARIABLES: CensusVariable[] = [
@@ -90,7 +83,7 @@ export const buildCensusUrl = (
 ) => {
   const dataset = getDataset(year);
   const variableList = ['NAME', ...variables].join(',');
-  let url = `${API_BASE_URL}/${year}/${dataset}?get=${variableList}`;
+  let url = `${API_BASE_URL}/${year}/${dataset}?get=${variableList}&key=${CENSUS_API_KEY}`;
   
   // Add geography filter
   if (geographyType === 'state') {

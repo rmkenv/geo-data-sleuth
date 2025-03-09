@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
+import { CENSUS_GEOCODER } from './mapConstants';
 
 interface MapSearchProps {
   onSearchResults: (results: any[]) => void;
@@ -19,10 +20,10 @@ const MapSearch = ({ onSearchResults }: MapSearchProps) => {
     setIsSearching(true);
     
     try {
-      // Using the Census Geocoder API (no API key required)
+      // Using the Census Geocoder API with the provided API key
       const encodedAddress = encodeURIComponent(searchQuery);
       const response = await fetch(
-        `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodedAddress}&benchmark=2020&format=json`
+        `${CENSUS_GEOCODER.onelineAddress}?address=${encodedAddress}&benchmark=${CENSUS_GEOCODER.benchmark}&vintage=${CENSUS_GEOCODER.vintage}&format=json&key=${CENSUS_GEOCODER.key}`
       );
       
       if (!response.ok) {

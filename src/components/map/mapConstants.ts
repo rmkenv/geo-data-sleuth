@@ -22,5 +22,6 @@ export const CENSUS_GEOCODER = {
   address: 'https://geocoding.geo.census.gov/geocoder/locations/address',
   coordinates: 'https://geocoding.geo.census.gov/geocoder/geographies/coordinates',
   benchmark: '2020',
-  vintage: '2020'
+  vintage: '2020',
+  key: '33ff48a144036b88ae3dcec421c8bdf908501554'
 };
