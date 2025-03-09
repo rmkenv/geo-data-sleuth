@@ -12,6 +12,22 @@ import GeoJsonLayer from './GeoJsonLayer';
 import { useMapData } from '@/hooks/useMapData';
 import { GEOGRAPHY_LEVELS, TIGERWEB_SERVICES } from './mapConstants';
 
+// Fix Leaflet icon issue in production
+import L from 'leaflet';
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+// Fix default Leaflet icon issue
+useEffect(() => {
+  delete (L.Icon.Default.prototype as any)._getIconUrl;
+  
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: icon,
+    iconUrl: icon,
+    shadowUrl: iconShadow
+  });
+}, []);
+
 interface LeafletMapProps {
   data?: any[];
   variable?: string;
@@ -39,6 +55,7 @@ const LeafletMap = ({
     const currentLevel = GEOGRAPHY_LEVELS.find(level => level.id === geographyLevel);
     if (currentLevel) {
       setSelectedLayerService(currentLevel.service);
+      console.log(`Selected layer service: ${currentLevel.service} for level ${geographyLevel}`);
     }
   }, [geographyLevel]);
 
@@ -100,13 +117,13 @@ const LeafletMap = ({
     );
   }
 
+  console.log('Rendering LeafletMap with GeoJSON data:', usGeoJson ? 'Present' : 'Missing');
+
   return (
     <div className="relative h-full w-full">
       <MapContainer 
-        {...{
-          center: mapCenter,
-          zoom: zoomLevel
-        } as any}
+        center={mapCenter}
+        zoom={zoomLevel}
         style={{ height: '100%', width: '100%', borderRadius: '0 0 0.5rem 0.5rem' }}
         scrollWheelZoom={true}
         zoomControl={true}
@@ -114,20 +131,20 @@ const LeafletMap = ({
         <MapController center={mapCenter} zoom={zoomLevel} />
         
         <TileLayer
-          {...{
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          } as any}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         
-        <GeoJsonLayer 
-          data={data}
-          variable={variable}
-          format={format}
-          geographyLevel={geographyLevel}
-          usGeoJson={usGeoJson}
-          onRegionSelect={onRegionSelect}
-        />
+        {usGeoJson && (
+          <GeoJsonLayer 
+            data={data}
+            variable={variable}
+            format={format}
+            geographyLevel={geographyLevel}
+            usGeoJson={usGeoJson}
+            onRegionSelect={onRegionSelect}
+          />
+        )}
         
         <MapMarkers searchResults={searchResults} />
       </MapContainer>

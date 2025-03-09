@@ -20,7 +20,12 @@ const GeoJsonLayer = ({
   usGeoJson, 
   onRegionSelect 
 }: GeoJsonLayerProps) => {
-  if (!usGeoJson) return null;
+  if (!usGeoJson) {
+    console.log('No GeoJSON data available for rendering');
+    return null;
+  }
+  
+  console.log(`Rendering GeoJsonLayer with ${usGeoJson.features ? usGeoJson.features.length : 0} features`);
   
   // Get style function for regions
   const regionStyleFunction = getRegionStyle(data, variable, geographyLevel);
@@ -28,22 +33,32 @@ const GeoJsonLayer = ({
   const handleFeatureClick = (e: any) => {
     const feature = e.sourceTarget.feature;
     const layer = e.sourceTarget;
+    
+    console.log('Feature clicked:', feature);
+    
     if (onRegionSelect && feature) {
       // Get next geography level
       let nextLevel = 'state';
       if (geographyLevel === 'state') nextLevel = 'county';
       else if (geographyLevel === 'county') nextLevel = 'tract';
+      else if (geographyLevel === 'tract') nextLevel = 'blockGroup';
+      else if (geographyLevel === 'blockGroup') nextLevel = 'block';
       
       // Get region identifier based on the geography level
       let regionId = '';
       if (geographyLevel === 'state') {
-        regionId = feature.properties.STATEFP || feature.properties.GEOID || feature.properties.name;
+        regionId = feature.properties.STATE || feature.properties.STATEFP || feature.properties.GEOID || feature.properties.name;
       } else if (geographyLevel === 'county') {
-        regionId = feature.properties.COUNTYFP || feature.properties.GEOID;
+        regionId = feature.properties.COUNTY || feature.properties.COUNTYFP || feature.properties.GEOID;
+      } else if (geographyLevel === 'tract') {
+        regionId = feature.properties.TRACT || feature.properties.TRACTCE || feature.properties.GEOID;
+      } else if (geographyLevel === 'blockGroup') {
+        regionId = feature.properties.BLKGRP || feature.properties.GEOID;
       } else {
-        regionId = feature.properties.GEOID || feature.properties.TRACTCE;
+        regionId = feature.properties.BLOCK || feature.properties.GEOID;
       }
       
+      console.log(`Selected region: ${regionId}, next level: ${nextLevel}`);
       onRegionSelect(regionId, nextLevel);
     }
     
@@ -97,11 +112,12 @@ const GeoJsonLayer = ({
     layer.setStyle(regionStyleFunction(e.sourceTarget.feature));
   };
 
+  // Add a unique key to force re-render when the data changes
   return (
     <GeoJSON 
       key={`${variable}-${geographyLevel}-${JSON.stringify(usGeoJson).length}`}
       data={usGeoJson}
-      pathOptions={regionStyleFunction({})}
+      style={regionStyleFunction}
       eventHandlers={{
         click: handleFeatureClick,
         mouseover: handleFeatureMouseover,

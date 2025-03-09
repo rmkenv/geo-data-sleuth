@@ -3,7 +3,7 @@ import { PathOptions } from 'leaflet';
 
 export const getRegionStyle = (data: any[] | undefined, variable: string | undefined, geographyLevel: string) => {
   return (feature: any): PathOptions => {
-    if (!data || !variable) {
+    if (!data || !variable || !feature) {
       return {
         fillColor: '#b3e5fc',
         weight: 1,
@@ -14,21 +14,28 @@ export const getRegionStyle = (data: any[] | undefined, variable: string | undef
     }
 
     // Find data for this region
-    const regionData = data.find((item: any) => {
+    const regionData = data?.find((item: any) => {
+      if (!item || !feature.properties) return false;
+      
       if (item.GEOID && feature.properties.GEOID) {
         return item.GEOID === feature.properties.GEOID;
       }
       
+      // Match by state code
+      if (item.STATE && feature.properties.STATE) {
+        return item.STATE === feature.properties.STATE;
+      }
+      
       // Fallback to name matching
       if (geographyLevel === 'state') {
-        return item.NAME && feature.properties.name && 
-          item.NAME.includes(feature.properties.name);
+        return item.NAME && feature.properties.NAME && 
+          item.NAME.includes(feature.properties.NAME);
       } else if (geographyLevel === 'county') {
-        return item.NAME && feature.properties.name && 
-          item.NAME.includes(feature.properties.name);
-      } else if (geographyLevel === 'zip') {
-        return item.NAME && feature.properties.ZCTA5CE10 && 
-          item.NAME.includes(feature.properties.ZCTA5CE10);
+        return item.NAME && feature.properties.NAME && 
+          item.NAME.includes(feature.properties.NAME);
+      } else if (geographyLevel === 'tract') {
+        return item.TRACT && feature.properties.TRACT && 
+          item.TRACT === feature.properties.TRACT;
       }
       return false;
     });
@@ -39,6 +46,8 @@ export const getRegionStyle = (data: any[] | undefined, variable: string | undef
     // Color scale based on value
     const getColor = (val: number) => {
       if (!val) return '#dddddd';
+      
+      // Customize these ranges based on your data
       return val > 100000 ? '#084c61' :
              val > 75000 ? '#177e89' :
              val > 50000 ? '#39a0ab' :
