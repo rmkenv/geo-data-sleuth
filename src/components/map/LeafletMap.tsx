@@ -123,8 +123,8 @@ const LeafletMap = ({
     <div className="relative h-full w-full">
       <MapContainer 
         style={{ height: '100%', width: '100%', borderRadius: '0 0 0.5rem 0.5rem' }}
-        center={mapCenter}
-        zoom={zoomLevel}
+        defaultCenter={mapCenter}
+        defaultZoom={zoomLevel}
       >
         <MapController center={mapCenter} zoom={zoomLevel} />
         
