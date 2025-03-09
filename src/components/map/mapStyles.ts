@@ -1,6 +1,8 @@
 
+import { PathOptions } from 'leaflet';
+
 export const getRegionStyle = (data: any[] | undefined, variable: string | undefined, geographyLevel: string) => {
-  return (feature: any) => {
+  return (feature: any): PathOptions => {
     if (!data || !variable) {
       return {
         fillColor: '#b3e5fc',

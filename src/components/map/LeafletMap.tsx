@@ -121,7 +121,7 @@ const LeafletMap = ({
           <GeoJSON 
             key={`${variable}-${geographyLevel}-${selectedRegion}`} // Force re-render when these change
             data={usGeoJson}
-            style={regionStyleFunction}
+            pathOptions={regionStyleFunction({})}
             onEachFeature={onEachFeatureFunction}
           />
         )}
