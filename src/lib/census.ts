@@ -1,9 +1,10 @@
+
 import { CensusVariable, VariableCategory, EnergyPriceData } from "@/types/census";
 
 // API Base URL and keys
 const API_BASE_URL = 'https://api.census.gov/data';
 const CENSUS_API_KEY = '33ff48a144036b88ae3dcec421c8bdf908501554';
-const EIA_API_KEY = 'DEMO_KEY'; // Replace with actual key in production
+const EIA_API_KEY = 'D70sW7lRZIlHGXqMOmQZucfMMAwtAc9xuDlbh78a';
 
 // Key Census variables we want to highlight
 export const CENSUS_VARIABLES: CensusVariable[] = [
@@ -198,9 +199,9 @@ export const fetchEnergyPrices = async (
     
     const data = await response.json();
     
-    // Mock data structure for development until API key is properly set up
+    // Check if we have valid data structure before continuing
     if (!data.response || !data.response.data) {
-      // Return mock data for demonstration purposes
+      // Return mock data if API response format is unexpected
       return generateMockEnergyData(type, stateCode, months);
     }
     
