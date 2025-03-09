@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Loader from './Loader';
 import { formatValue } from '@/lib/census';
@@ -154,8 +154,8 @@ const Map = ({
     };
   };
 
-  // Handle feature properties and click events
-  const onEachFeature = (feature: any, layer: any) => {
+  // Event handlers for features
+  const onEachFeatureFunc = (feature: any, layer: any) => {
     if (!data || !variable) return;
 
     // Find data for this region
@@ -208,11 +208,11 @@ const Map = ({
         ) : (
           <div className="h-full w-full">
             <MapContainer 
+              center={mapCenter}
+              zoom={zoomLevel}
               style={{ height: '100%', width: '100%', borderRadius: '0 0 0.5rem 0.5rem' }}
-              zoom={4}
               scrollWheelZoom={true}
               zoomControl={true}
-              attributionControl={true}
             >
               <MapController center={mapCenter} zoom={zoomLevel} />
               
@@ -225,8 +225,10 @@ const Map = ({
                 <GeoJSON 
                   key={`${variable}-${geographyLevel}-${selectedRegion}`} // Force re-render when these change
                   data={usGeoJson}
-                  style={getRegionStyle}
-                  onEachFeature={onEachFeature}
+                  pathOptions={getRegionStyle({})}
+                  eventHandlers={{
+                    eachFeature: onEachFeatureFunc
+                  }}
                 />
               )}
             </MapContainer>
