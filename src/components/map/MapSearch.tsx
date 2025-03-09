@@ -70,7 +70,7 @@ const MapSearch = ({ onSearchResults }: MapSearchProps) => {
       toast({
         title: "Census Geocoder is unavailable",
         description: "Using local fallback geocoding",
-        variant: "warning",
+        variant: "default", // Changed from "warning" to "default" as only "default" and "destructive" are allowed
       });
       
       onSearchResults([localGeocodeResult]);
