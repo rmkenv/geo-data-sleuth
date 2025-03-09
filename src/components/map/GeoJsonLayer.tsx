@@ -33,43 +33,45 @@ const GeoJsonLayer = ({
     // Get style function for regions
     const regionStyleFunction = getRegionStyle(data, variable, geographyLevel);
 
-    // Create a new GeoJSON layer
-    const map = L.map('map-container'); // We need to get the map instance
-
-    // Use map.eachLayer to find the map instance reference
-    document.querySelectorAll('.leaflet-container').forEach((container) => {
-      // Find the Leaflet map instance associated with this container
-      const mapInstance = L.DomUtil.get(container as HTMLElement)?.__leaflet_instance__;
-      
-      if (mapInstance) {
-        // Remove existing GeoJSON layer if it exists
-        if (geoJsonLayerRef.current) {
-          mapInstance.removeLayer(geoJsonLayerRef.current);
+    // Find the Leaflet map instance
+    const mapContainer = document.getElementById('map-container');
+    if (!mapContainer || !mapContainer.__leaflet_instance__) {
+      console.log('Map container or Leaflet instance not found');
+      return;
+    }
+    
+    const mapInstance = mapContainer.__leaflet_instance__;
+    
+    // Remove existing GeoJSON layer if it exists
+    if (geoJsonLayerRef.current) {
+      mapInstance.removeLayer(geoJsonLayerRef.current);
+    }
+    
+    // Create new GeoJSON layer
+    try {
+      geoJsonLayerRef.current = L.geoJSON(usGeoJson, {
+        style: regionStyleFunction,
+        onEachFeature: (feature, layer) => {
+          // Add click handler
+          layer.on({
+            click: (e) => handleFeatureClick(e, feature, layer, mapInstance),
+            mouseover: (e) => handleFeatureMouseover(e, layer),
+            mouseout: (e) => handleFeatureMouseout(e, layer, feature)
+          });
         }
-        
-        // Create new GeoJSON layer
-        geoJsonLayerRef.current = L.geoJSON(usGeoJson, {
-          style: regionStyleFunction,
-          onEachFeature: (feature, layer) => {
-            // Add click handler
-            layer.on({
-              click: (e) => handleFeatureClick(e, feature, layer, mapInstance),
-              mouseover: (e) => handleFeatureMouseover(e, layer),
-              mouseout: (e) => handleFeatureMouseout(e, layer, feature)
-            });
-          }
-        }).addTo(mapInstance);
-      }
-    });
+      }).addTo(mapInstance);
+      
+      console.log('GeoJSON layer added to map');
+    } catch (error) {
+      console.error('Error creating GeoJSON layer:', error);
+    }
     
     // Cleanup function
     return () => {
-      document.querySelectorAll('.leaflet-container').forEach((container) => {
-        const mapInstance = L.DomUtil.get(container as HTMLElement)?.__leaflet_instance__;
-        if (mapInstance && geoJsonLayerRef.current) {
-          mapInstance.removeLayer(geoJsonLayerRef.current);
-        }
-      });
+      if (mapInstance && geoJsonLayerRef.current) {
+        mapInstance.removeLayer(geoJsonLayerRef.current);
+        console.log('GeoJSON layer removed from map');
+      }
     };
   }, [usGeoJson, data, variable, geographyLevel, format, onRegionSelect]);
   
@@ -77,7 +79,7 @@ const GeoJsonLayer = ({
   const handleFeatureClick = (e: L.LeafletEvent, feature: any, layer: L.Layer, map: L.Map) => {
     console.log('Feature clicked:', feature);
     
-    if (onRegionSelect && feature) {
+    if (onRegionSelect && feature && feature.properties) {
       // Get next geography level
       let nextLevel = 'state';
       if (geographyLevel === 'state') nextLevel = 'county';
@@ -104,12 +106,12 @@ const GeoJsonLayer = ({
     }
     
     // Create popup with census data
-    if (data && variable && feature) {
+    if (data && variable && feature && feature.properties) {
       const regionData = data.find((item: any) => {
         // Match data to feature based on various ID fields
-        if (item.GEOID && feature.properties.GEOID) {
+        if (item && item.GEOID && feature.properties.GEOID) {
           return item.GEOID === feature.properties.GEOID;
-        } else if (item.NAME && feature.properties.name) {
+        } else if (item && item.NAME && feature.properties.name) {
           return item.NAME.includes(feature.properties.name);
         }
         return false;

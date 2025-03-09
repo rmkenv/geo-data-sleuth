@@ -22,7 +22,7 @@ const GeocodingMap = () => {
       match_type: result.side || 'exact'
     }));
     
-    // Send results to map search component via callback
+    // Send results to map search component via custom event
     if (window && 'dispatchEvent' in window) {
       window.dispatchEvent(new CustomEvent('map-search-results', { 
         detail: transformedResults 
@@ -49,6 +49,7 @@ const GeocodingMap = () => {
               selectedRegion={selectedRegion}
               geographyLevel={geographyLevel}
               onRegionSelect={handleRegionSelect}
+              isLoading={false}
             />
           </CardContent>
         </Card>

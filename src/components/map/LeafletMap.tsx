@@ -46,6 +46,7 @@ const LeafletMap = ({
 
   // Fix default Leaflet icon issue
   useEffect(() => {
+    console.log('Setting up Leaflet default icon');
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     
     L.Icon.Default.mergeOptions({
@@ -94,10 +95,32 @@ const LeafletMap = ({
     }
   }, [selectedRegion, geographyLevel]);
 
-  // Handle search results
+  // Listen for search results from custom event
+  useEffect(() => {
+    const handleSearchResultsEvent = (e: any) => {
+      if (e.detail && Array.isArray(e.detail)) {
+        console.log('Received search results:', e.detail);
+        setSearchResults(e.detail);
+        
+        if (e.detail.length > 0 && e.detail[0].center) {
+          const [lng, lat] = e.detail[0].center;
+          setMapCenter([lat, lng]);
+          setZoomLevel(12);
+        }
+      }
+    };
+    
+    window.addEventListener('map-search-results', handleSearchResultsEvent);
+    return () => {
+      window.removeEventListener('map-search-results', handleSearchResultsEvent);
+    };
+  }, []);
+
+  // Handle search results directly
   const handleSearch = (results: any[]) => {
+    console.log('Search results in LeafletMap:', results);
     setSearchResults(results);
-    if (results.length > 0) {
+    if (results.length > 0 && results[0].center) {
       const [lng, lat] = results[0].center;
       setMapCenter([lat, lng]);
       setZoomLevel(12);
@@ -106,6 +129,7 @@ const LeafletMap = ({
 
   // Handle layer selection
   const handleLayerChange = (serviceUrl: string, level: string) => {
+    console.log(`Layer changed to ${level} with service: ${serviceUrl}`);
     setSelectedLayerService(serviceUrl);
     if (onRegionSelect) {
       onRegionSelect('', level);
@@ -120,40 +144,53 @@ const LeafletMap = ({
     );
   }
 
+  console.log('Rendering LeafletMap component with:', { mapCenter, zoomLevel, searchResults });
+
   return (
     <div className="relative h-full w-full">
-      <div ref={mapRef} className="h-full w-full" style={{ borderRadius: '0 0 0.5rem 0.5rem' }} />
+      <div 
+        ref={mapRef} 
+        id="map-container"
+        className="h-full w-full" 
+        style={{ borderRadius: '0 0 0.5rem 0.5rem' }} 
+      />
       
-      <MapContainer 
-        mapRef={mapRef}
-        setLeafletMap={setLeafletMap}
-        mapCenter={mapCenter}
-        zoomLevel={zoomLevel}
-      >
-        <TigerWebLayer 
-          map={leafletMap}
-          selectedLayerService={selectedLayerService}
-        />
-        
-        {usGeoJson && leafletMap && (
-          <GeoJsonLayer
-            data={data}
-            variable={variable}
-            format={format}
-            geographyLevel={geographyLevel}
-            usGeoJson={usGeoJson}
-            onRegionSelect={onRegionSelect}
-          />
-        )}
-        
-        <MapMarkers searchResults={searchResults} />
-        
-        <MapController
-          map={leafletMap}
-          center={mapCenter}
-          zoom={zoomLevel}
-        />
-      </MapContainer>
+      {mapRef.current && (
+        <MapContainer 
+          mapRef={mapRef}
+          setLeafletMap={setLeafletMap}
+          mapCenter={mapCenter}
+          zoomLevel={zoomLevel}
+        >
+          {leafletMap && (
+            <>
+              <TigerWebLayer 
+                map={leafletMap}
+                selectedLayerService={selectedLayerService}
+              />
+              
+              {usGeoJson && (
+                <GeoJsonLayer
+                  data={data}
+                  variable={variable}
+                  format={format}
+                  geographyLevel={geographyLevel}
+                  usGeoJson={usGeoJson}
+                  onRegionSelect={onRegionSelect}
+                />
+              )}
+              
+              <MapMarkers searchResults={searchResults} />
+              
+              <MapController
+                map={leafletMap}
+                center={mapCenter}
+                zoom={zoomLevel}
+              />
+            </>
+          )}
+        </MapContainer>
+      )}
 
       {/* Map controls overlay */}
       <div className="absolute top-0 right-0 z-[1000] bg-white bg-opacity-90 p-2 m-2 rounded shadow-md">

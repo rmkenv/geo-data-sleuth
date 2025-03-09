@@ -1,7 +1,6 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { TIGERWEB_SERVICES } from './mapConstants';
 
 interface TigerWebLayerProps {
   map: L.Map | null;
@@ -9,29 +8,41 @@ interface TigerWebLayerProps {
 }
 
 const TigerWebLayer = ({ map, selectedLayerService }: TigerWebLayerProps) => {
+  const layerRef = useRef<L.TileLayer.WMS | null>(null);
+  
   useEffect(() => {
-    if (!map) return;
+    if (!map) {
+      console.log('Map not available for TigerWebLayer');
+      return;
+    }
 
-    // Clear previous TigerWeb layers
-    map.eachLayer((layer) => {
-      if (layer instanceof L.TileLayer.WMS && layer.options.layers === 'layer') {
-        map.removeLayer(layer);
-      }
-    });
+    console.log(`Loading TigerWeb layer from: ${selectedLayerService}`);
+
+    // Clear previous TigerWeb layer
+    if (layerRef.current) {
+      map.removeLayer(layerRef.current);
+      layerRef.current = null;
+    }
 
     // Add the selected TigerWeb layer
-    const tigerLayer = L.tileLayer.wms(selectedLayerService, {
-      layers: 'layer',
-      format: 'image/png',
-      transparent: true,
-      attribution: 'U.S. Census Bureau'
-    });
-    
-    tigerLayer.addTo(map);
+    try {
+      layerRef.current = L.tileLayer.wms(selectedLayerService, {
+        layers: 'layer',
+        format: 'image/png',
+        transparent: true,
+        attribution: 'U.S. Census Bureau'
+      }).addTo(map);
+      
+      console.log('TigerWeb layer added to map');
+    } catch (error) {
+      console.error('Error adding TigerWeb layer:', error);
+    }
 
     return () => {
-      if (map) {
-        map.removeLayer(tigerLayer);
+      if (map && layerRef.current) {
+        map.removeLayer(layerRef.current);
+        layerRef.current = null;
+        console.log('TigerWeb layer removed from map');
       }
     };
   }, [map, selectedLayerService]);

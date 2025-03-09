@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import L from 'leaflet';
 
@@ -17,69 +18,75 @@ interface MapMarkersProps {
 }
 
 const MapMarkers = ({ searchResults }: MapMarkersProps) => {
-  const [results, setResults] = useState<any[]>(searchResults || []);
   const markersRef = useRef<L.Marker[]>([]);
   
   // Effect to manage markers
   useEffect(() => {
-    if (!searchResults || searchResults.length === 0) {
-      // Clear existing markers
-      markersRef.current.forEach(marker => {
-        marker.remove();
-      });
-      markersRef.current = [];
+    console.log('MapMarkers: Processing search results', searchResults);
+
+    // Find the map instance
+    const mapContainer = document.getElementById('map-container');
+    if (!mapContainer || !mapContainer.__leaflet_instance__) {
+      console.log('Map container or Leaflet instance not found');
       return;
     }
     
-    // Find the map instance
-    document.querySelectorAll('.leaflet-container').forEach((container) => {
-      const mapInstance = L.DomUtil.get(container as HTMLElement)?.__leaflet_instance__;
-      
-      if (mapInstance) {
-        // Clear existing markers
-        markersRef.current.forEach(marker => {
-          mapInstance.removeLayer(marker);
-        });
-        markersRef.current = [];
+    const mapInstance = mapContainer.__leaflet_instance__;
+    
+    // Clear existing markers
+    markersRef.current.forEach(marker => {
+      mapInstance.removeLayer(marker);
+    });
+    markersRef.current = [];
+    
+    if (!searchResults || searchResults.length === 0) {
+      console.log('No search results to display');
+      return;
+    }
+    
+    // Add new markers
+    searchResults.forEach((result, index) => {
+      if (result.center && result.center.length === 2) {
+        console.log(`Adding marker at ${result.center[1]}, ${result.center[0]}`);
         
-        // Add new markers
-        searchResults.forEach((result, index) => {
-          if (result.center && result.center.length === 2) {
-            const marker = L.marker(
-              [result.center[1], result.center[0]], 
-              { icon: DefaultIcon }
-            ).addTo(mapInstance);
-            
-            // Add popup to marker
-            marker.bindPopup(`
-              <div class="p-1">
-                <h3 class="font-bold text-sm">${result.place_name || 'Location'}</h3>
-                ${result.text ? `<p class="text-xs text-gray-600">${result.text}</p>` : ''}
-                ${result.match_type ? `<p class="text-xs mt-1"><span class="font-semibold">Match type:</span> ${result.match_type}</p>` : ''}
-              </div>
-            `);
-            
-            markersRef.current.push(marker);
-          }
-        });
-        
-        // If we have results, zoom to the first one
-        if (searchResults.length > 0 && searchResults[0].center) {
-          const [lng, lat] = searchResults[0].center;
-          mapInstance.setView([lat, lng], 14);
+        try {
+          const marker = L.marker(
+            [result.center[1], result.center[0]], 
+            { icon: DefaultIcon }
+          ).addTo(mapInstance);
+          
+          // Add popup to marker
+          marker.bindPopup(`
+            <div class="p-1">
+              <h3 class="font-bold text-sm">${result.place_name || 'Location'}</h3>
+              ${result.text ? `<p class="text-xs text-gray-600">${result.text}</p>` : ''}
+              ${result.match_type ? `<p class="text-xs mt-1"><span class="font-semibold">Match type:</span> ${result.match_type}</p>` : ''}
+            </div>
+          `);
+          
+          markersRef.current.push(marker);
+        } catch (error) {
+          console.error('Error adding marker:', error);
         }
       }
     });
     
-    // Update state
-    setResults(searchResults);
+    // If we have results, zoom to the first one
+    if (searchResults.length > 0 && searchResults[0].center) {
+      const [lng, lat] = searchResults[0].center;
+      mapInstance.setView([lat, lng], 14);
+      console.log(`Map view updated to ${lat}, ${lng} at zoom 14`);
+    }
     
     // Cleanup
     return () => {
-      markersRef.current.forEach(marker => {
-        marker.remove();
-      });
-      markersRef.current = [];
+      if (mapInstance) {
+        markersRef.current.forEach(marker => {
+          mapInstance.removeLayer(marker);
+        });
+        markersRef.current = [];
+        console.log('All markers removed');
+      }
     };
   }, [searchResults]);
   
