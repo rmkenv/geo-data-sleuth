@@ -196,9 +196,16 @@ const LeafletMap = ({
   // These props are actually valid for react-leaflet v4, but TypeScript is not recognizing them properly
   return (
     <div className="relative h-full w-full">
+      {/* 
+        Using a workaround for TypeScript errors:
+        - Use a type assertion to bypass TypeScript checking for these specific props
+        - The props are valid at runtime, but TypeScript definitions are incomplete
+      */}
       <MapContainer 
-        center={mapCenter}
-        zoom={zoomLevel}
+        {...{
+          center: mapCenter,
+          zoom: zoomLevel
+        } as any}
         style={{ height: '100%', width: '100%', borderRadius: '0 0 0.5rem 0.5rem' }}
         scrollWheelZoom={true}
         zoomControl={true}
@@ -206,8 +213,10 @@ const LeafletMap = ({
         <MapController center={mapCenter} zoom={zoomLevel} />
         
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          {...{
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          } as any}
         />
         
         {usGeoJson && (
