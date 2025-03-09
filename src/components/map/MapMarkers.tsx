@@ -26,12 +26,17 @@ const MapMarkers = ({ searchResults }: MapMarkersProps) => {
 
     // Find the map instance
     const mapContainer = document.getElementById('map-container');
-    if (!mapContainer || !mapContainer.__leaflet_instance__) {
-      console.log('Map container or Leaflet instance not found');
+    if (!mapContainer) {
+      console.log('Map container not found');
       return;
     }
     
-    const mapInstance = mapContainer.__leaflet_instance__;
+    // Access the map instance safely with type assertion
+    const mapInstance = (mapContainer as any)._leaflet_instance;
+    if (!mapInstance) {
+      console.log('Leaflet map instance not found');
+      return;
+    }
     
     // Clear existing markers
     markersRef.current.forEach(marker => {

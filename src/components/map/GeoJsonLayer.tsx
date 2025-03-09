@@ -35,12 +35,17 @@ const GeoJsonLayer = ({
 
     // Find the Leaflet map instance
     const mapContainer = document.getElementById('map-container');
-    if (!mapContainer || !mapContainer.__leaflet_instance__) {
-      console.log('Map container or Leaflet instance not found');
+    if (!mapContainer) {
+      console.log('Map container not found');
       return;
     }
     
-    const mapInstance = mapContainer.__leaflet_instance__;
+    // Access the map instance safely with type assertion
+    const mapInstance = (mapContainer as any)._leaflet_instance;
+    if (!mapInstance) {
+      console.log('Leaflet map instance not found');
+      return;
+    }
     
     // Remove existing GeoJSON layer if it exists
     if (geoJsonLayerRef.current) {

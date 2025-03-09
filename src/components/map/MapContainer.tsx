@@ -46,6 +46,10 @@ const MapContainer = ({
 
       // Share the map instance with parent
       setLeafletMap(mapInstanceRef.current);
+      
+      // Expose the Leaflet map instance on the DOM element for other components to access
+      (mapRef.current as any)._leaflet_instance = mapInstanceRef.current;
+      
       console.log('Map initialized and shared with parent component');
     } else {
       // Update center and zoom if map already exists
@@ -59,6 +63,9 @@ const MapContainer = ({
         console.log('Cleaning up map instance');
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
+        if (mapRef.current) {
+          (mapRef.current as any)._leaflet_instance = null;
+        }
       }
     };
   }, [mapRef, setLeafletMap]);
