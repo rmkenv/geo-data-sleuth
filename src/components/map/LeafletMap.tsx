@@ -1,7 +1,7 @@
-
-import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, useMap } from 'react-leaflet';
+import React, { useEffect, useRef, useState } from 'react';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { TIGERWEB_SERVICES } from './mapConstants';
 import MapController from './MapController';
 import MapLegend from './MapLegend';
 import GeographyBreadcrumb from './GeographyBreadcrumb';
@@ -10,23 +10,11 @@ import MapLayerSelector from './MapLayerSelector';
 import MapMarkers from './MapMarkers';
 import GeoJsonLayer from './GeoJsonLayer';
 import { useMapData } from '@/hooks/useMapData';
-import { GEOGRAPHY_LEVELS, TIGERWEB_SERVICES } from './mapConstants';
+import { GEOGRAPHY_LEVELS } from './mapConstants';
 
 // Fix Leaflet icon issue in production
-import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-// Fix default Leaflet icon issue
-useEffect(() => {
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
-  
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: icon,
-    iconUrl: icon,
-    shadowUrl: iconShadow
-  });
-}, []);
 
 interface LeafletMapProps {
   data?: any[];
@@ -49,6 +37,20 @@ const LeafletMap = ({
   const [zoomLevel, setZoomLevel] = useState(4);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedLayerService, setSelectedLayerService] = useState(TIGERWEB_SERVICES.states);
+  
+  const mapRef = useRef<HTMLDivElement>(null);
+  const leafletMapRef = useRef<L.Map | null>(null);
+
+  // Fix default Leaflet icon issue
+  useEffect(() => {
+    delete (L.Icon.Default.prototype as any)._getIconUrl;
+    
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: icon,
+      iconUrl: icon,
+      shadowUrl: iconShadow
+    });
+  }, []);
 
   // Get the current geography level service
   useEffect(() => {
@@ -89,11 +91,50 @@ const LeafletMap = ({
     }
   }, [selectedRegion, geographyLevel]);
 
+  // Initialize and update map
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // Initialize map if it doesn't exist
+    if (!leafletMapRef.current) {
+      leafletMapRef.current = L.map(mapRef.current).setView(mapCenter, zoomLevel);
+      
+      // Base layer - OpenStreetMap
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(leafletMapRef.current);
+
+      // Add Census TIGERweb layers
+      Object.entries(TIGERWEB_SERVICES).forEach(([key, url]) => {
+        const tigerLayer = L.tileLayer.wms(url, {
+          layers: 'layer',
+          format: 'image/png',
+          transparent: true,
+          attribution: 'U.S. Census Bureau'
+        });
+
+        if (key === 'states') {
+          tigerLayer.addTo(leafletMapRef.current!);
+        }
+      });
+    } else {
+      // Update center and zoom if map already exists
+      leafletMapRef.current.setView(mapCenter, zoomLevel);
+    }
+
+    // Cleanup function
+    return () => {
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove();
+        leafletMapRef.current = null;
+      }
+    };
+  }, [mapCenter, zoomLevel]);
+
   // Handle search results
   const handleSearch = (results: any[]) => {
     setSearchResults(results);
     if (results.length > 0) {
-      // Center map on first result
       const [lng, lat] = results[0].center;
       setMapCenter([lat, lng]);
       setZoomLevel(12);
@@ -104,7 +145,6 @@ const LeafletMap = ({
   const handleLayerChange = (serviceUrl: string, level: string) => {
     setSelectedLayerService(serviceUrl);
     if (onRegionSelect) {
-      // Reset the region selection when changing layers
       onRegionSelect('', level);
     }
   };
@@ -117,35 +157,9 @@ const LeafletMap = ({
     );
   }
 
-  console.log('Rendering LeafletMap with GeoJSON data:', usGeoJson ? 'Present' : 'Missing');
-
   return (
     <div className="relative h-full w-full">
-      <MapContainer 
-        style={{ height: '100%', width: '100%', borderRadius: '0 0 0.5rem 0.5rem' }}
-        center={mapCenter}
-        zoom={zoomLevel}
-      >
-        <MapController center={mapCenter} zoom={zoomLevel} />
-        
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        />
-        
-        {usGeoJson && (
-          <GeoJsonLayer 
-            data={data}
-            variable={variable}
-            format={format}
-            geographyLevel={geographyLevel}
-            usGeoJson={usGeoJson}
-            onRegionSelect={onRegionSelect}
-          />
-        )}
-        
-        <MapMarkers searchResults={searchResults} />
-      </MapContainer>
+      <div ref={mapRef} className="h-full w-full" style={{ borderRadius: '0 0 0.5rem 0.5rem' }} />
 
       {/* Map controls overlay */}
       <div className="absolute top-0 right-0 z-[1000] bg-white bg-opacity-90 p-2 m-2 rounded shadow-md">
