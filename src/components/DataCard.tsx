@@ -12,6 +12,7 @@ interface DataCardProps {
   description?: string;
   icon?: React.ReactNode;
   isLoading?: boolean;
+  hasError?: boolean;
 }
 
 const DataCard = ({
@@ -21,7 +22,8 @@ const DataCard = ({
   format,
   description,
   icon,
-  isLoading = false
+  isLoading = false,
+  hasError = false
 }: DataCardProps) => {
   const formattedValue = value !== null ? formatValue(value, format) : 'N/A';
   
@@ -47,11 +49,13 @@ const DataCard = ({
       <CardContent>
         {isLoading ? (
           <div className="h-8 w-2/3 bg-muted/50 animate-pulse rounded"></div>
+        ) : hasError ? (
+          <div className="text-3xl font-bold text-red-600">Error</div>
         ) : (
           <div className="text-3xl font-bold text-foreground">{formattedValue}</div>
         )}
         
-        {percentChange !== null && !isLoading && (
+        {percentChange !== null && !isLoading && !hasError && (
           <div className={`text-sm mt-1 
             ${changeType === 'positive' ? 'text-green-600' : 
               changeType === 'negative' ? 'text-red-600' : 'text-muted-foreground'}`}>

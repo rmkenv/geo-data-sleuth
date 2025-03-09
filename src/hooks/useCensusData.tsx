@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
@@ -10,6 +11,39 @@ import { CensusData, EnergyPriceData, LocationComparison } from '@/types/census'
 
 // Get variable IDs for API request (excluding energy price variables)
 const variableIds = CENSUS_VARIABLES.map(v => v.id);
+
+// Function to fetch energy prices (EIA API)
+const fetchEnergyPrices = async (
+  type: 'electricity' | 'natural-gas',
+  state?: string,
+  months: number = 12
+): Promise<any[]> => {
+  // This function would actually connect to the EIA API
+  // For now, return mock data
+  console.log(`Mocking ${type} prices for ${state || 'US'} for the last ${months} months`);
+  
+  const mockData = [];
+  const basePrice = type === 'electricity' ? 13.5 : 18.2;  // cents/kWh or $/Mcf
+  
+  // Generate mock time series data with some variability
+  const now = new Date();
+  for (let i = months - 1; i >= 0; i--) {
+    const date = new Date(now);
+    date.setMonth(date.getMonth() - i);
+    
+    // Add some random fluctuation to the prices
+    const fluctuation = (Math.random() - 0.5) * 2;  // Random between -1 and 1
+    const value = basePrice + (i * 0.2) + fluctuation;  // Slight upward trend with noise
+    
+    mockData.push({
+      date: date.toISOString().split('T')[0],
+      value: value,
+      state: state || 'US'
+    });
+  }
+  
+  return mockData;
+};
 
 export function useCensusData(
   year: number = 2021,
