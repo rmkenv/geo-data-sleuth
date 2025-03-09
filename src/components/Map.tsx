@@ -28,7 +28,14 @@ const Map = ({
   return (
     <Card className="w-full h-full overflow-hidden animate-fade-in glass">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium">{title}</CardTitle>
+        <CardTitle className="text-lg font-medium flex justify-between">
+          <span>{title}</span>
+          {selectedRegion && (
+            <span className="text-sm text-muted-foreground">
+              {selectedRegion} ({geographyLevel})
+            </span>
+          )}
+        </CardTitle>
       </CardHeader>
       <CardContent className="p-0 relative overflow-hidden h-[calc(100%-3.5rem)]">
         {isLoading ? (

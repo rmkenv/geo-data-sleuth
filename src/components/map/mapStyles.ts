@@ -15,6 +15,11 @@ export const getRegionStyle = (data: any[] | undefined, variable: string | undef
 
     // Find data for this region
     const regionData = data.find((item: any) => {
+      if (item.GEOID && feature.properties.GEOID) {
+        return item.GEOID === feature.properties.GEOID;
+      }
+      
+      // Fallback to name matching
       if (geographyLevel === 'state') {
         return item.NAME && feature.properties.name && 
           item.NAME.includes(feature.properties.name);
