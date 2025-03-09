@@ -122,17 +122,17 @@ const LeafletMap = ({
   return (
     <div className="relative h-full w-full">
       <MapContainer 
-        center={mapCenter}
-        zoom={zoomLevel}
         style={{ height: '100%', width: '100%', borderRadius: '0 0 0.5rem 0.5rem' }}
         scrollWheelZoom={true}
         zoomControl={true}
+        defaultCenter={mapCenter}
+        defaultZoom={zoomLevel}
       >
         <MapController center={mapCenter} zoom={zoomLevel} />
         
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         
         {usGeoJson && (

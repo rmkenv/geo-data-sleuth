@@ -2,6 +2,7 @@
 import React from 'react';
 import { GeoJSON } from 'react-leaflet';
 import { getRegionStyle } from './mapStyles';
+import type { PathOptions } from 'leaflet';
 
 interface GeoJsonLayerProps {
   data: any[] | undefined;
@@ -117,7 +118,7 @@ const GeoJsonLayer = ({
     <GeoJSON 
       key={`${variable}-${geographyLevel}-${JSON.stringify(usGeoJson).length}`}
       data={usGeoJson}
-      style={regionStyleFunction}
+      pathOptions={regionStyleFunction}
       eventHandlers={{
         click: handleFeatureClick,
         mouseover: handleFeatureMouseover,
