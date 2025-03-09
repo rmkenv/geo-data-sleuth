@@ -1,8 +1,7 @@
 
-import React from 'react';
-import { GeoJSON } from 'react-leaflet';
+import React, { useEffect, useRef } from 'react';
+import L from 'leaflet';
 import { getRegionStyle } from './mapStyles';
-import type { PathOptions } from 'leaflet';
 
 interface GeoJsonLayerProps {
   data: any[] | undefined;
@@ -21,20 +20,61 @@ const GeoJsonLayer = ({
   usGeoJson, 
   onRegionSelect 
 }: GeoJsonLayerProps) => {
-  if (!usGeoJson) {
-    console.log('No GeoJSON data available for rendering');
-    return null;
-  }
+  const geoJsonLayerRef = useRef<L.GeoJSON | null>(null);
   
-  console.log(`Rendering GeoJsonLayer with ${usGeoJson.features ? usGeoJson.features.length : 0} features`);
-  
-  // Get style function for regions
-  const regionStyleFunction = getRegionStyle(data, variable, geographyLevel);
-
-  const handleFeatureClick = (e: any) => {
-    const feature = e.sourceTarget.feature;
-    const layer = e.sourceTarget;
+  useEffect(() => {
+    if (!usGeoJson || !usGeoJson.features || usGeoJson.features.length === 0) {
+      console.log('No GeoJSON data available for rendering');
+      return;
+    }
     
+    console.log(`Rendering GeoJsonLayer with ${usGeoJson.features.length} features`);
+    
+    // Get style function for regions
+    const regionStyleFunction = getRegionStyle(data, variable, geographyLevel);
+
+    // Create a new GeoJSON layer
+    const map = L.map('map-container'); // We need to get the map instance
+
+    // Use map.eachLayer to find the map instance reference
+    document.querySelectorAll('.leaflet-container').forEach((container) => {
+      // Find the Leaflet map instance associated with this container
+      const mapInstance = L.DomUtil.get(container as HTMLElement)?.__leaflet_instance__;
+      
+      if (mapInstance) {
+        // Remove existing GeoJSON layer if it exists
+        if (geoJsonLayerRef.current) {
+          mapInstance.removeLayer(geoJsonLayerRef.current);
+        }
+        
+        // Create new GeoJSON layer
+        geoJsonLayerRef.current = L.geoJSON(usGeoJson, {
+          style: regionStyleFunction,
+          onEachFeature: (feature, layer) => {
+            // Add click handler
+            layer.on({
+              click: (e) => handleFeatureClick(e, feature, layer, mapInstance),
+              mouseover: (e) => handleFeatureMouseover(e, layer),
+              mouseout: (e) => handleFeatureMouseout(e, layer, feature)
+            });
+          }
+        }).addTo(mapInstance);
+      }
+    });
+    
+    // Cleanup function
+    return () => {
+      document.querySelectorAll('.leaflet-container').forEach((container) => {
+        const mapInstance = L.DomUtil.get(container as HTMLElement)?.__leaflet_instance__;
+        if (mapInstance && geoJsonLayerRef.current) {
+          mapInstance.removeLayer(geoJsonLayerRef.current);
+        }
+      });
+    };
+  }, [usGeoJson, data, variable, geographyLevel, format, onRegionSelect]);
+  
+  // Handle feature click
+  const handleFeatureClick = (e: L.LeafletEvent, feature: any, layer: L.Layer, map: L.Map) => {
     console.log('Feature clicked:', feature);
     
     if (onRegionSelect && feature) {
@@ -88,44 +128,40 @@ const GeoJsonLayer = ({
                     feature.properties.GEOID || 
                     'Selected Region';
                     
-        layer.bindPopup(`
-          <div class="p-2">
-            <h3 class="font-bold">${name}</h3>
-            <p>${variable}: ${formattedValue}</p>
-          </div>
-        `).openPopup();
+        L.popup()
+          .setLatLng(e.latlng)
+          .setContent(`
+            <div class="p-2">
+              <h3 class="font-bold">${name}</h3>
+              <p>${variable}: ${formattedValue}</p>
+            </div>
+          `)
+          .openOn(map);
       }
     }
   };
 
-  const handleFeatureMouseover = (e: any) => {
-    const layer = e.sourceTarget;
-    layer.setStyle({
-      weight: 2,
-      color: '#666',
-      dashArray: '',
-      fillOpacity: 0.9
-    });
+  // Handle mouseover event
+  const handleFeatureMouseover = (e: L.LeafletEvent, layer: L.Layer) => {
+    if (layer instanceof L.Path) {
+      layer.setStyle({
+        weight: 2,
+        color: '#666',
+        dashArray: '',
+        fillOpacity: 0.9
+      });
+    }
   };
 
-  const handleFeatureMouseout = (e: any) => {
-    const layer = e.sourceTarget;
-    layer.setStyle(regionStyleFunction(e.sourceTarget.feature));
+  // Handle mouseout event
+  const handleFeatureMouseout = (e: L.LeafletEvent, layer: L.Layer, feature: any) => {
+    if (layer instanceof L.Path) {
+      const regionStyleFunction = getRegionStyle(data, variable, geographyLevel);
+      layer.setStyle(regionStyleFunction(feature));
+    }
   };
 
-  // Add a unique key to force re-render when the data changes
-  return (
-    <GeoJSON 
-      key={`${variable}-${geographyLevel}-${JSON.stringify(usGeoJson).length}`}
-      data={usGeoJson}
-      pathOptions={regionStyleFunction}
-      eventHandlers={{
-        click: handleFeatureClick,
-        mouseover: handleFeatureMouseover,
-        mouseout: handleFeatureMouseout
-      }}
-    />
-  );
+  return null;
 };
 
 export default GeoJsonLayer;

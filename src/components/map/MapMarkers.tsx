@@ -1,9 +1,7 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import L from 'leaflet';
-import { Marker, Popup, useMap } from 'react-leaflet';
 
-// Fix for default marker icons in Leaflet with webpack/vite
+// Fix for default marker icons
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
@@ -14,68 +12,78 @@ let DefaultIcon = L.icon({
   iconAnchor: [12, 41],
 });
 
-L.Marker.prototype.options.icon = DefaultIcon;
-
 interface MapMarkersProps {
   searchResults: any[];
 }
 
 const MapMarkers = ({ searchResults }: MapMarkersProps) => {
   const [results, setResults] = useState<any[]>(searchResults || []);
-  const map = useMap();
+  const markersRef = useRef<L.Marker[]>([]);
   
-  // Listen for custom events with search results
+  // Effect to manage markers
   useEffect(() => {
-    const handleSearchResults = (e: CustomEvent) => {
-      if (e.detail && Array.isArray(e.detail)) {
-        setResults(e.detail);
+    if (!searchResults || searchResults.length === 0) {
+      // Clear existing markers
+      markersRef.current.forEach(marker => {
+        marker.remove();
+      });
+      markersRef.current = [];
+      return;
+    }
+    
+    // Find the map instance
+    document.querySelectorAll('.leaflet-container').forEach((container) => {
+      const mapInstance = L.DomUtil.get(container as HTMLElement)?.__leaflet_instance__;
+      
+      if (mapInstance) {
+        // Clear existing markers
+        markersRef.current.forEach(marker => {
+          mapInstance.removeLayer(marker);
+        });
+        markersRef.current = [];
+        
+        // Add new markers
+        searchResults.forEach((result, index) => {
+          if (result.center && result.center.length === 2) {
+            const marker = L.marker(
+              [result.center[1], result.center[0]], 
+              { icon: DefaultIcon }
+            ).addTo(mapInstance);
+            
+            // Add popup to marker
+            marker.bindPopup(`
+              <div class="p-1">
+                <h3 class="font-bold text-sm">${result.place_name || 'Location'}</h3>
+                ${result.text ? `<p class="text-xs text-gray-600">${result.text}</p>` : ''}
+                ${result.match_type ? `<p class="text-xs mt-1"><span class="font-semibold">Match type:</span> ${result.match_type}</p>` : ''}
+              </div>
+            `);
+            
+            markersRef.current.push(marker);
+          }
+        });
         
         // If we have results, zoom to the first one
-        if (e.detail.length > 0 && e.detail[0].center) {
-          const [lng, lat] = e.detail[0].center;
-          map.setView([lat, lng], 14);
+        if (searchResults.length > 0 && searchResults[0].center) {
+          const [lng, lat] = searchResults[0].center;
+          mapInstance.setView([lat, lng], 14);
         }
       }
-    };
+    });
     
-    window.addEventListener('map-search-results', handleSearchResults as EventListener);
+    // Update state
+    setResults(searchResults);
     
+    // Cleanup
     return () => {
-      window.removeEventListener('map-search-results', handleSearchResults as EventListener);
+      markersRef.current.forEach(marker => {
+        marker.remove();
+      });
+      markersRef.current = [];
     };
-  }, [map]);
-  
-  // Update when props change
-  useEffect(() => {
-    if (searchResults && searchResults.length) {
-      setResults(searchResults);
-    }
   }, [searchResults]);
   
-  if (!results.length) return null;
-  
-  return (
-    <>
-      {results.map((result, index) => (
-        <Marker
-          key={`search-result-${result.id || index}`}
-          position={[result.center[1], result.center[0]]}
-        >
-          <Popup>
-            <div className="p-1">
-              <h3 className="font-bold text-sm">{result.place_name}</h3>
-              {result.text && <p className="text-xs text-gray-600">{result.text}</p>}
-              {result.match_type && (
-                <p className="text-xs mt-1">
-                  <span className="font-semibold">Match type:</span> {result.match_type}
-                </p>
-              )}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-    </>
-  );
+  return null;
 };
 
 export default MapMarkers;
