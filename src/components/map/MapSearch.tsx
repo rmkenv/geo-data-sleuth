@@ -19,10 +19,10 @@ const MapSearch = ({ onSearchResults }: MapSearchProps) => {
     setIsSearching(true);
     
     try {
-      // Using the Mapbox Geocoding API as an example
-      // In a production app, you'd need to secure this with token restrictions or use a backend proxy
+      // Using the Census Geocoder API (no API key required)
+      const encodedAddress = encodeURIComponent(searchQuery);
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=pk.eyJ1IjoiZXhhbXBsZXVzZXIiLCJhIjoiY2t4ZXhwbG9rMDJocDJvcW9wYXVxNWU0aSJ9.example-placeholder-token&country=us`
+        `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodedAddress}&benchmark=2020&format=json`
       );
       
       if (!response.ok) {
@@ -30,14 +30,24 @@ const MapSearch = ({ onSearchResults }: MapSearchProps) => {
       }
       
       const data = await response.json();
-      onSearchResults(data.features || []);
+      
+      // Transform Census geocoder results to match the expected format
+      const transformedResults = data.result?.addressMatches?.map((match: any) => ({
+        id: match.geographies?.['2020 Census Blocks']?.[0]?.GEOID || String(Math.random()),
+        place_name: match.matchedAddress,
+        text: `${match.addressComponents.city || ''}, ${match.addressComponents.state || ''}`,
+        center: [match.coordinates.x, match.coordinates.y], // [longitude, latitude]
+        match_type: match.tigerLine?.side || 'exact'
+      })) || [];
+      
+      onSearchResults(transformedResults);
     } catch (error) {
       console.error('Error during location search:', error);
       // Fallback: Create a mock result for demonstration
       const fallbackResult = [{
         id: 'fallback',
         place_name: `Results for: ${searchQuery}`,
-        text: 'Actual search is disabled in demo mode',
+        text: 'Location not found or service unavailable',
         center: [-98.5795, 39.8283], // US center [lng, lat]
       }];
       onSearchResults(fallbackResult);
@@ -50,7 +60,7 @@ const MapSearch = ({ onSearchResults }: MapSearchProps) => {
     <form onSubmit={handleSearch} className="flex gap-2">
       <Input
         type="text"
-        placeholder="Search for a location..."
+        placeholder="Enter an address..."
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         className="flex-grow"

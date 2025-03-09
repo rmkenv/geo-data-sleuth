@@ -31,9 +31,14 @@ const MapMarkers = ({ searchResults }: MapMarkersProps) => {
           position={[result.center[1], result.center[0]]}
         >
           <Popup>
-            <div>
-              <h3 className="font-bold">{result.place_name}</h3>
-              <p>{result.text}</p>
+            <div className="p-1">
+              <h3 className="font-bold text-sm">{result.place_name}</h3>
+              {result.text && <p className="text-xs text-gray-600">{result.text}</p>}
+              {result.match_type && (
+                <p className="text-xs mt-1">
+                  <span className="font-semibold">Match type:</span> {result.match_type}
+                </p>
+              )}
             </div>
           </Popup>
         </Marker>

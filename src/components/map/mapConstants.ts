@@ -15,3 +15,12 @@ export const GEOGRAPHY_LEVELS = [
   { id: 'blockGroup', name: 'Block Groups', service: TIGERWEB_SERVICES.blockGroups },
   { id: 'block', name: 'Census Blocks', service: TIGERWEB_SERVICES.blocks }
 ];
+
+// Census Geocoder Services
+export const CENSUS_GEOCODER = {
+  onelineAddress: 'https://geocoding.geo.census.gov/geocoder/locations/onelineaddress',
+  address: 'https://geocoding.geo.census.gov/geocoder/locations/address',
+  coordinates: 'https://geocoding.geo.census.gov/geocoder/geographies/coordinates',
+  benchmark: '2020',
+  vintage: '2020'
+};
