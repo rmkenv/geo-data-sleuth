@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import AddressGeocoder from './AddressGeocoder';
+import SearchBoxGeocoder from './SearchBoxGeocoder';
 import Map from '@/components/Map';
 import { type GeocodeResult } from '@/services/geocodingService';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 
 const GeocodingMap = () => {
   const [geocodeResults, setGeocodeResults] = useState<GeocodeResult[]>([]);
@@ -36,17 +36,14 @@ const GeocodingMap = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="md:col-span-1">
-        <AddressGeocoder onResults={handleGeocodeResults} />
+    <div className="flex flex-col space-y-4">
+      <div className="w-full">
+        <SearchBoxGeocoder onResults={handleGeocodeResults} />
       </div>
       
-      <div className="md:col-span-2 h-[600px]">
+      <div className="w-full h-[600px]">
         <Card className="w-full h-full">
-          <CardHeader className="pb-0">
-            <CardTitle className="text-lg">Census Geography Map</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 h-[calc(100%-4rem)]">
+          <CardContent className="p-0 h-full">
             <Map
               title="Census Geography Explorer"
               selectedRegion={selectedRegion}
@@ -56,6 +53,24 @@ const GeocodingMap = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {geocodeResults.length > 0 && (
+        <div className="bg-white/70 backdrop-blur-md border border-white/20 rounded-lg p-4 shadow-sm">
+          <div className="text-sm font-medium mb-2">Found {geocodeResults.length} address matches</div>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {geocodeResults.map((result, index) => (
+              <div key={index} className="text-sm p-2 border rounded hover:bg-accent/50 cursor-pointer" 
+                   onClick={() => handleGeocodeResults([result])}>
+                <div className="font-medium">{result.matchedAddress}</div>
+                <div className="text-xs text-muted-foreground">
+                  ({result.coordinates[1].toFixed(6)}, {result.coordinates[0].toFixed(6)})
+                  {result.side && ` - ${result.side} side of street`}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

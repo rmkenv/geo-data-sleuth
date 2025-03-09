@@ -9,9 +9,13 @@ const Geocoding = () => {
       <Navbar />
       <main>
         <div className="container mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-8">
+          <h1 className="text-3xl font-bold tracking-tight mb-4">
             Address Geocoding and Census Geography
           </h1>
+          
+          <p className="text-muted-foreground mb-6">
+            Search for addresses to see them on the map with Census geographic boundaries.
+          </p>
           
           <GeocodingMap />
           
