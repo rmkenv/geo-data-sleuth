@@ -20,7 +20,10 @@ const MapContainer = ({
   const mapInstanceRef = useRef<L.Map | null>(null);
 
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current) {
+      console.log('Map ref not found');
+      return;
+    }
 
     // Initialize map if it doesn't exist
     if (!mapInstanceRef.current) {
@@ -31,26 +34,30 @@ const MapContainer = ({
       console.log(`Initializing map with ID: ${mapId}`);
       
       // Initialize the map
-      mapInstanceRef.current = L.map(mapRef.current, {
-        center: mapCenter,
-        zoom: zoomLevel,
-        scrollWheelZoom: true,
-        zoomControl: true
-      });
-      
-      // Add base OSM layer
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
-      }).addTo(mapInstanceRef.current);
+      try {
+        mapInstanceRef.current = L.map(mapRef.current, {
+          center: mapCenter,
+          zoom: zoomLevel,
+          scrollWheelZoom: true,
+          zoomControl: true
+        });
+        
+        // Add base OSM layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          maxZoom: 19
+        }).addTo(mapInstanceRef.current);
 
-      // Share the map instance with parent
-      setLeafletMap(mapInstanceRef.current);
-      
-      // Expose the Leaflet map instance on the DOM element for other components to access
-      (mapRef.current as any)._leaflet_instance = mapInstanceRef.current;
-      
-      console.log('Map initialized and shared with parent component');
+        // Share the map instance with parent
+        setLeafletMap(mapInstanceRef.current);
+        
+        // Expose the Leaflet map instance on the DOM element for other components to access
+        (mapRef.current as any)._leaflet_instance = mapInstanceRef.current;
+        
+        console.log('Map initialized and shared with parent component');
+      } catch (error) {
+        console.error('Error initializing map:', error);
+      }
     } else {
       // Update center and zoom if map already exists
       mapInstanceRef.current.setView(mapCenter, zoomLevel);
@@ -68,7 +75,7 @@ const MapContainer = ({
         }
       }
     };
-  }, [mapRef, setLeafletMap]);
+  }, [mapRef, setLeafletMap, mapCenter, zoomLevel]);
 
   // Update map view when center or zoom changes
   useEffect(() => {
