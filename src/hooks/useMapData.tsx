@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { 
   TIGERWEB_SERVICES, 
@@ -6,6 +7,7 @@ import {
   ARCGIS_SERVICES
 } from '@/components/map/mapConstants';
 import { toast } from '@/components/ui/use-toast';
+import { arcGisToGeoJSON } from '@/lib/arcgisService';
 
 export const useMapData = (
   selectedRegion: string | undefined,
@@ -38,38 +40,34 @@ export const useMapData = (
         
         // Build the query URL with proper parameters
         const queryParams = new URLSearchParams({
-          f: 'json', // Changed from 'geojson' to 'json' as some services might not support GeoJSON
+          f: 'json',
           outFields: '*',
           where: whereClause,
-          outSR: '4326', // Specify the spatial reference (WGS84)
+          outSR: '4326',
           returnGeometry: 'true'
         });
         
-        // Add geometry type and spatial reference
+        // Add query parameters
         const url = `${selectedLayerService}/query?${queryParams.toString()}`;
         console.log(`Request URL: ${url}`);
         
         const response = await fetch(url);
         
         if (!response.ok) {
+          console.error(`Failed fetch with status: ${response.status}`);
           throw new Error(`Failed to fetch data: ${response.statusText}`);
         }
         
         const data = await response.json();
+        console.log(`Received ${data.features?.length || 0} features from ArcGIS`);
         
         // Convert ArcGIS JSON to GeoJSON format
-        const geoJson = {
-          type: 'FeatureCollection',
-          features: data.features.map((feature: any) => ({
-            type: 'Feature',
-            geometry: feature.geometry,
-            properties: feature.attributes
-          }))
-        };
+        const geoJson = arcGisToGeoJSON(data.features || []);
         
-        console.log('GeoJSON data received:', geoJson.features ? `${geoJson.features.length} features` : 'No features');
+        console.log('GeoJSON data created:', geoJson.features ? `${geoJson.features.length} features` : 'No features');
         
         if (!geoJson.features || geoJson.features.length === 0) {
+          console.warn('No features found in response, using fallback');
           throw new Error('No features found in response');
         }
         
@@ -78,6 +76,11 @@ export const useMapData = (
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching GeoJSON data:', error);
+        toast({
+          title: "Geographic data service unavailable",
+          description: "Using fallback geographic data source",
+          variant: "destructive",
+        });
         fetchFallbackGeoJson();
       }
     };

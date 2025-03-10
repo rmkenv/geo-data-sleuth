@@ -50,6 +50,7 @@ const GeoJsonLayer = ({
     // Remove existing GeoJSON layer if it exists
     if (geoJsonLayerRef.current) {
       mapInstance.removeLayer(geoJsonLayerRef.current);
+      geoJsonLayerRef.current = null;
     }
     
     // Create new GeoJSON layer
@@ -66,6 +67,11 @@ const GeoJsonLayer = ({
         }
       }).addTo(mapInstance);
       
+      // Fit map to the GeoJSON bounds
+      if (geoJsonLayerRef.current.getBounds().isValid()) {
+        mapInstance.fitBounds(geoJsonLayerRef.current.getBounds());
+      }
+      
       console.log('GeoJSON layer added to map');
     } catch (error) {
       console.error('Error creating GeoJSON layer:', error);
@@ -76,6 +82,7 @@ const GeoJsonLayer = ({
       if (mapInstance && geoJsonLayerRef.current) {
         mapInstance.removeLayer(geoJsonLayerRef.current);
         console.log('GeoJSON layer removed from map');
+        geoJsonLayerRef.current = null;
       }
     };
   }, [usGeoJson, data, variable, geographyLevel, format, onRegionSelect]);
