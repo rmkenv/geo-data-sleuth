@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { 
   TIGERWEB_SERVICES, 
@@ -18,7 +17,6 @@ export const useMapData = (
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Load GeoJSON data from ArcGIS services
   useEffect(() => {
     const fetchGeoJson = async () => {
       try {
@@ -26,64 +24,60 @@ export const useMapData = (
         setError(null);
         console.log(`Fetching GeoJSON data for ${geographyLevel} from ${selectedLayerService}`);
         
-        // Build the query URL for the service
-        const queryParams = new URLSearchParams({
-          f: 'geojson',
-          outFields: '*',
-          where: '1=1' // Get all features
-        });
-        
+        // Properly encode the where clause
+        let whereClause = '1=1';
         if (selectedRegion && geographyLevel !== 'state') {
-          // If a region is selected and we're not at the state level,
-          // filter by the parent geography
           if (geographyLevel === 'county') {
-            queryParams.set('where', `STATE_FIPS='${selectedRegion}'`);
+            whereClause = `STATE_FIPS='${selectedRegion}'`;
           } else if (geographyLevel === 'tract' || geographyLevel === 'blockGroup') {
-            queryParams.set('where', `STATE='${selectedRegion}'`);
-          } else if (geographyLevel === 'block') {
-            queryParams.set('where', `STATE='${selectedRegion}'`);
+            whereClause = `STATE='${selectedRegion}'`;
           } else if (geographyLevel === 'zip') {
-            // ZIP codes don't usually have state field in the same way
-            queryParams.set('where', `STATE_FIPS='${selectedRegion}'`);
+            whereClause = `STATE_FIPS='${selectedRegion}'`;
           }
-          console.log(`Filtering by STATE=${selectedRegion}`);
         }
         
-        // Limit the number of features to avoid performance issues
-        queryParams.set('resultRecordCount', '1000');
+        // Build the query URL with proper parameters
+        const queryParams = new URLSearchParams({
+          f: 'json', // Changed from 'geojson' to 'json' as some services might not support GeoJSON
+          outFields: '*',
+          where: whereClause,
+          outSR: '4326', // Specify the spatial reference (WGS84)
+          returnGeometry: 'true'
+        });
         
+        // Add geometry type and spatial reference
         const url = `${selectedLayerService}/query?${queryParams.toString()}`;
         console.log(`Request URL: ${url}`);
         
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15-second timeout
-        
-        const response = await fetch(url, { signal: controller.signal });
-        clearTimeout(timeoutId);
+        const response = await fetch(url);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch data: ${response.statusText}`);
         }
         
         const data = await response.json();
-        console.log('GeoJSON data received:', data.features ? `${data.features.length} features` : 'No features');
         
-        if (!data.features || data.features.length === 0) {
+        // Convert ArcGIS JSON to GeoJSON format
+        const geoJson = {
+          type: 'FeatureCollection',
+          features: data.features.map((feature: any) => ({
+            type: 'Feature',
+            geometry: feature.geometry,
+            properties: feature.attributes
+          }))
+        };
+        
+        console.log('GeoJSON data received:', geoJson.features ? `${geoJson.features.length} features` : 'No features');
+        
+        if (!geoJson.features || geoJson.features.length === 0) {
           throw new Error('No features found in response');
         }
         
-        setUsGeoJson(data);
+        setUsGeoJson(geoJson);
         setIsMapLoaded(true);
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching GeoJSON data:', error);
-        // Show a toast notification
-        toast({
-          title: "Geographic data service unavailable",
-          description: "Using fallback data sources",
-          variant: "default",
-        });
-        // Fallback to the original GitHub hosted files if the service fails
         fetchFallbackGeoJson();
       }
     };
