@@ -8,7 +8,7 @@ interface TigerWebLayerProps {
 }
 
 const TigerWebLayer = ({ map, selectedLayerService }: TigerWebLayerProps) => {
-  const layerRef = useRef<L.TileLayer.WMS | null>(null);
+  const layerRef = useRef<L.TileLayer | null>(null);
   
   useEffect(() => {
     if (!map) {
@@ -16,7 +16,7 @@ const TigerWebLayer = ({ map, selectedLayerService }: TigerWebLayerProps) => {
       return;
     }
 
-    console.log(`Loading WMS layer from: ${selectedLayerService}`);
+    console.log(`Loading tile layer from: ${selectedLayerService}`);
 
     // Clear previous layer
     if (layerRef.current) {
@@ -25,17 +25,17 @@ const TigerWebLayer = ({ map, selectedLayerService }: TigerWebLayerProps) => {
     }
 
     try {
-      // Add WMS layer
-      layerRef.current = L.tileLayer.wms(selectedLayerService + '/MapServer/WMSServer', {
-        layers: '0',
-        format: 'image/png',
-        transparent: true,
-        version: '1.1.0'
+      // Use regular tile layer instead of WMS for ArcGIS REST services
+      const serviceUrl = `${selectedLayerService}/MapServer/tile/{z}/{y}/{x}`;
+      layerRef.current = L.tileLayer(serviceUrl, {
+        maxZoom: 19,
+        opacity: 0.7,
+        attribution: 'ESRI ArcGIS'
       }).addTo(map);
       
-      console.log('WMS Layer added successfully');
+      console.log('Tile Layer added successfully');
     } catch (error) {
-      console.error('Error adding WMS layer:', error);
+      console.error('Error adding tile layer:', error);
     }
 
     return () => {

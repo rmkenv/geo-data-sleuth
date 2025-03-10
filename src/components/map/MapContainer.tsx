@@ -35,20 +35,12 @@ const MapContainer = ({
       console.log('Initializing map with center:', mapCenter, 'zoom:', zoomLevel);
       
       try {
-        // Clean up any existing map instances
-        const existingMaps = document.querySelectorAll('.leaflet-container');
-        existingMaps.forEach(container => {
-          try {
-            // Use Leaflet's API to get the map associated with this container
-            const map = L.map.getMap(container as HTMLElement);
-            if (map) {
-              console.log('Cleaning up existing map instance');
-              map.remove();
-            }
-          } catch (e) {
-            console.error('Error cleaning up map:', e);
-          }
-        });
+        // Clean up any existing map instances that might be causing conflicts
+        if (mapRef.current._leaflet_id) {
+          console.log('Cleaning up existing map instance');
+          // This element already has a map attached
+          return;
+        }
 
         // Create new map instance
         const map = L.map(mapRef.current, {
