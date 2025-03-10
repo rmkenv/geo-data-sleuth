@@ -1,7 +1,5 @@
 
 import React from 'react';
-import { GEOGRAPHY_LEVELS } from './mapConstants';
-import MapLayerSelector from './MapLayerSelector';
 import MapSearch from './MapSearch';
 import MapLegend from './MapLegend';
 import GeographyBreadcrumb from './GeographyBreadcrumb';
@@ -27,15 +25,6 @@ const MapControls = ({
   onToolChange,
   onGranularityChange
 }: MapControlsProps) => {
-  // Handle layer selection
-  const handleLayerChange = (serviceUrl: string, level: string) => {
-    console.log(`Layer changed to ${level} with service: ${serviceUrl}`);
-    onLayerChange(serviceUrl, level);
-    if (onRegionSelect) {
-      onRegionSelect('', level);
-    }
-  };
-
   // Handle granularity change
   const handleGranularityChange = (granularity: string) => {
     onGranularityChange(granularity);
@@ -50,15 +39,6 @@ const MapControls = ({
 
   return (
     <>
-      {/* Map layer selector */}
-      <div className="absolute top-0 right-0 z-[1000] bg-white bg-opacity-90 p-2 m-2 rounded shadow-md">
-        <MapLayerSelector 
-          levels={GEOGRAPHY_LEVELS}
-          currentLevel={geographyLevel} 
-          onLayerChange={handleLayerChange}
-        />
-      </div>
-      
       {/* Map search */}
       <div className="absolute top-0 left-0 z-[1000] bg-white bg-opacity-90 p-2 m-2 rounded shadow-md w-64">
         <MapSearch 

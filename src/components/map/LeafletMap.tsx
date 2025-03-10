@@ -93,7 +93,7 @@ const LeafletMap = ({
     }
   };
 
-  // Handle layer change
+  // Handle layer change - simplified as the selector is removed but maintained for API compatibility
   const handleLayerChange = (serviceUrl: string, level: string) => {
     mapState.setSelectedLayerService(serviceUrl);
   };
