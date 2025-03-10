@@ -1,4 +1,3 @@
-
 // Updated TIGERweb Services URLs - Using ArcGIS services
 export const TIGERWEB_SERVICES = {
   states: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_States_Generalized/FeatureServer/0',
@@ -28,14 +27,14 @@ export const CENSUS_GEOCODER = {
   key: '33ff48a144036b88ae3dcec421c8bdf908501554'
 };
 
-// ArcGIS Query services
+// ArcGIS Query services - Updated per user's request
 export const ARCGIS_SERVICES = {
   zipCodes: 'https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Census_ZIP_Code_Tabulation_Areas_2010_v1/FeatureServer/0',
   censusTracts: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Tracts/FeatureServer/0',
   censusBlocks: 'https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/US_Census_Blocks_v1/FeatureServer/0'
 };
 
-// Basemap tile URLs
+// Basemap tile URLs - Ensuring these are correct and accessible
 export const BASEMAPS = {
   osm: {
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',

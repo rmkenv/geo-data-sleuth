@@ -11,7 +11,7 @@ import { useMapData } from '@/hooks/useMapData';
 import { useMapState } from '@/hooks/useMapState';
 import { toast } from '@/components/ui/use-toast';
 
-// Fix Leaflet icon issue in production
+// Fix Leaflet icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
@@ -35,12 +35,10 @@ const LeafletMap = ({
   // Get map state from custom hook
   const mapState = useMapState(geographyLevel, selectedRegion);
   const mapRef = useRef<HTMLDivElement>(null);
-  const [basemapLayers, setBasemapLayers] = useState<{[key: string]: L.TileLayer}>({});
   const [currentBasemap, setCurrentBasemap] = useState('osm');
 
   // Fix default Leaflet icon issue
   useEffect(() => {
-    console.log('Setting up Leaflet default icon');
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     
     L.Icon.Default.mergeOptions({
@@ -53,50 +51,15 @@ const LeafletMap = ({
   // Update layer service when geography level changes
   useEffect(() => {
     mapState.updateLayerService(geographyLevel);
-  }, [geographyLevel]);
+  }, [geographyLevel, mapState]);
 
   // Update map view when selected region or geography level changes
   useEffect(() => {
     mapState.updateMapView(selectedRegion, geographyLevel);
-  }, [selectedRegion, geographyLevel]);
-
-  // Initialize basemap layers when map is created
-  useEffect(() => {
-    if (mapState.leafletMap) {
-      // Initialize basemap layers
-      const osmLayer = L.tileLayer(BASEMAPS.osm.url, {
-        attribution: BASEMAPS.osm.attribution,
-        maxZoom: BASEMAPS.osm.maxZoom
-      }).addTo(mapState.leafletMap);
-      
-      const satelliteLayer = L.tileLayer(BASEMAPS.satellite.url, {
-        attribution: BASEMAPS.satellite.attribution,
-        maxZoom: BASEMAPS.satellite.maxZoom
-      });
-      
-      setBasemapLayers({
-        osm: osmLayer,
-        satellite: satelliteLayer
-      });
-      
-      // Set initial basemap
-      setCurrentBasemap('osm');
-    }
-  }, [mapState.leafletMap]);
+  }, [selectedRegion, geographyLevel, mapState]);
 
   // Handle basemap change
   const handleBasemapChange = (basemap: string) => {
-    if (!mapState.leafletMap || !basemapLayers[basemap]) return;
-    
-    // Remove current basemap
-    Object.values(basemapLayers).forEach(layer => {
-      if (mapState.leafletMap?.hasLayer(layer)) {
-        mapState.leafletMap.removeLayer(layer);
-      }
-    });
-    
-    // Add new basemap
-    basemapLayers[basemap].addTo(mapState.leafletMap);
     setCurrentBasemap(basemap);
     
     // Notification
@@ -116,30 +79,8 @@ const LeafletMap = ({
       : ARCGIS_SERVICES.censusTracts
   );
 
-  // Listen for search results from custom event
-  useEffect(() => {
-    const handleSearchResultsEvent = (e: any) => {
-      if (e.detail && Array.isArray(e.detail)) {
-        console.log('Received search results:', e.detail);
-        mapState.setSearchResults(e.detail);
-        
-        if (e.detail.length > 0 && e.detail[0].center) {
-          const [lng, lat] = e.detail[0].center;
-          mapState.setMapCenter([lat, lng]);
-          mapState.setZoomLevel(12);
-        }
-      }
-    };
-    
-    window.addEventListener('map-search-results', handleSearchResultsEvent);
-    return () => {
-      window.removeEventListener('map-search-results', handleSearchResultsEvent);
-    };
-  }, []);
-
-  // Handle search results directly
+  // Handle search results
   const handleSearch = (results: any[]) => {
-    console.log('Search results in LeafletMap:', results);
     mapState.setSearchResults(results);
     if (results.length > 0 && results[0].center) {
       const [lng, lat] = results[0].center;
@@ -148,7 +89,7 @@ const LeafletMap = ({
     }
   };
 
-  // Handle layer change - simplified as the selector is removed but maintained for API compatibility
+  // Handle layer change
   const handleLayerChange = (serviceUrl: string, level: string) => {
     mapState.setSelectedLayerService(serviceUrl);
   };
@@ -162,8 +103,6 @@ const LeafletMap = ({
         description: "Data will populate for the selected area",
         variant: "default",
       });
-      
-      console.log('Selected AOI:', geojson);
     }
   };
 
@@ -174,12 +113,6 @@ const LeafletMap = ({
       </div>
     );
   }
-
-  console.log('Rendering LeafletMap component with:', { 
-    mapCenter: mapState.mapCenter, 
-    zoomLevel: mapState.zoomLevel, 
-    searchResults: mapState.searchResults 
-  });
 
   return (
     <div className="relative h-full w-full">
@@ -196,7 +129,7 @@ const LeafletMap = ({
           setLeafletMap={mapState.setLeafletMap}
           mapCenter={mapState.mapCenter}
           zoomLevel={mapState.zoomLevel}
-          initialBasemap="osm"
+          currentBasemap={currentBasemap}
         >
           {mapState.leafletMap && (
             <MapLayers

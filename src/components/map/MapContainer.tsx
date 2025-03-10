@@ -8,7 +8,7 @@ interface MapContainerProps {
   setLeafletMap: (map: L.Map) => void;
   mapCenter: [number, number];
   zoomLevel: number;
-  initialBasemap?: string;
+  currentBasemap: string;
   children?: React.ReactNode;
 }
 
@@ -17,26 +17,22 @@ const MapContainer = ({
   setLeafletMap, 
   mapCenter, 
   zoomLevel,
-  initialBasemap = 'osm',
+  currentBasemap = 'osm',
   children 
 }: MapContainerProps) => {
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const basemapLayerRef = useRef<L.TileLayer | null>(null);
 
   useEffect(() => {
     if (!mapRef.current) {
-      console.log('Map ref not found');
+      console.error('Map ref not found');
       return;
     }
 
     // Initialize map if it doesn't exist
     if (!mapInstanceRef.current) {
-      // Create a unique ID for the map container
-      const mapId = `map-${Math.random().toString(36).substring(2, 9)}`;
-      mapRef.current.id = mapId;
+      console.log('Initializing map');
       
-      console.log(`Initializing map with ID: ${mapId}`);
-      
-      // Initialize the map
       try {
         mapInstanceRef.current = L.map(mapRef.current, {
           center: mapCenter,
@@ -45,26 +41,19 @@ const MapContainer = ({
           zoomControl: true
         });
         
-        // Add base layer - will be managed by the parent component
-        L.tileLayer(BASEMAPS[initialBasemap as keyof typeof BASEMAPS].url, {
-          attribution: BASEMAPS[initialBasemap as keyof typeof BASEMAPS].attribution,
-          maxZoom: BASEMAPS[initialBasemap as keyof typeof BASEMAPS].maxZoom
+        // Add initial base layer
+        basemapLayerRef.current = L.tileLayer(BASEMAPS[currentBasemap].url, {
+          attribution: BASEMAPS[currentBasemap].attribution,
+          maxZoom: BASEMAPS[currentBasemap].maxZoom
         }).addTo(mapInstanceRef.current);
 
         // Share the map instance with parent
         setLeafletMap(mapInstanceRef.current);
         
-        // Expose the Leaflet map instance on the DOM element for other components to access
-        (mapRef.current as any)._leaflet_instance = mapInstanceRef.current;
-        
-        console.log('Map initialized and shared with parent component');
+        console.log('Map initialized successfully');
       } catch (error) {
         console.error('Error initializing map:', error);
       }
-    } else {
-      // Update center and zoom if map already exists
-      mapInstanceRef.current.setView(mapCenter, zoomLevel);
-      console.log(`Map view updated to ${mapCenter} at zoom ${zoomLevel}`);
     }
 
     // Cleanup function
@@ -73,12 +62,10 @@ const MapContainer = ({
         console.log('Cleaning up map instance');
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
-        if (mapRef.current) {
-          (mapRef.current as any)._leaflet_instance = null;
-        }
+        basemapLayerRef.current = null;
       }
     };
-  }, [mapRef, setLeafletMap, mapCenter, zoomLevel, initialBasemap]);
+  }, [mapRef, setLeafletMap]);
 
   // Update map view when center or zoom changes
   useEffect(() => {
@@ -87,6 +74,24 @@ const MapContainer = ({
       console.log(`Map view updated to ${mapCenter} at zoom ${zoomLevel}`);
     }
   }, [mapCenter, zoomLevel]);
+
+  // Update basemap when currentBasemap changes
+  useEffect(() => {
+    if (mapInstanceRef.current && BASEMAPS[currentBasemap]) {
+      // Remove current basemap layer
+      if (basemapLayerRef.current) {
+        mapInstanceRef.current.removeLayer(basemapLayerRef.current);
+      }
+      
+      // Add new basemap layer
+      basemapLayerRef.current = L.tileLayer(BASEMAPS[currentBasemap].url, {
+        attribution: BASEMAPS[currentBasemap].attribution,
+        maxZoom: BASEMAPS[currentBasemap].maxZoom
+      }).addTo(mapInstanceRef.current);
+      
+      console.log(`Basemap changed to ${currentBasemap}`);
+    }
+  }, [currentBasemap]);
 
   return <>{children}</>;
 };
