@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { TIGERWEB_SERVICES, GEOGRAPHY_LEVELS } from '@/components/map/mapConstants';
+import { Map as LeafletMap } from 'leaflet';
 
 export const useMapState = (
   geographyLevel: string = 'state',
@@ -10,7 +11,7 @@ export const useMapState = (
   const [zoomLevel, setZoomLevel] = useState(4);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedLayerService, setSelectedLayerService] = useState(TIGERWEB_SERVICES.states);
-  const [leafletMap, setLeafletMap] = useState<L.Map | null>(null);
+  const [leafletMap, setLeafletMap] = useState<LeafletMap | null>(null);
   const [activeTool, setActiveTool] = useState('pan');
   const [dataGranularity, setDataGranularity] = useState('tract');
   const [areaOfInterest, setAreaOfInterest] = useState<any>(null);
