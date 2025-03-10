@@ -1,9 +1,9 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
-import { ARCGIS_SERVICES } from './mapConstants';
+import { ARCGIS_SERVICES, BASEMAPS } from './mapConstants';
 import MapContainer from './MapContainer';
 import MapControls from './MapControls';
 import MapLayers from './MapLayers';
@@ -35,6 +35,8 @@ const LeafletMap = ({
   // Get map state from custom hook
   const mapState = useMapState(geographyLevel, selectedRegion);
   const mapRef = useRef<HTMLDivElement>(null);
+  const [basemapLayers, setBasemapLayers] = useState<{[key: string]: L.TileLayer}>({});
+  const [currentBasemap, setCurrentBasemap] = useState('osm');
 
   // Fix default Leaflet icon issue
   useEffect(() => {
@@ -58,8 +60,61 @@ const LeafletMap = ({
     mapState.updateMapView(selectedRegion, geographyLevel);
   }, [selectedRegion, geographyLevel]);
 
+  // Initialize basemap layers when map is created
+  useEffect(() => {
+    if (mapState.leafletMap) {
+      // Initialize basemap layers
+      const osmLayer = L.tileLayer(BASEMAPS.osm.url, {
+        attribution: BASEMAPS.osm.attribution,
+        maxZoom: BASEMAPS.osm.maxZoom
+      }).addTo(mapState.leafletMap);
+      
+      const satelliteLayer = L.tileLayer(BASEMAPS.satellite.url, {
+        attribution: BASEMAPS.satellite.attribution,
+        maxZoom: BASEMAPS.satellite.maxZoom
+      });
+      
+      setBasemapLayers({
+        osm: osmLayer,
+        satellite: satelliteLayer
+      });
+      
+      // Set initial basemap
+      setCurrentBasemap('osm');
+    }
+  }, [mapState.leafletMap]);
+
+  // Handle basemap change
+  const handleBasemapChange = (basemap: string) => {
+    if (!mapState.leafletMap || !basemapLayers[basemap]) return;
+    
+    // Remove current basemap
+    Object.values(basemapLayers).forEach(layer => {
+      if (mapState.leafletMap?.hasLayer(layer)) {
+        mapState.leafletMap.removeLayer(layer);
+      }
+    });
+    
+    // Add new basemap
+    basemapLayers[basemap].addTo(mapState.leafletMap);
+    setCurrentBasemap(basemap);
+    
+    // Notification
+    toast({
+      title: "Basemap changed",
+      description: `Switched to ${basemap === 'osm' ? 'OpenStreetMap' : 'Satellite'} basemap`,
+      variant: "default",
+    });
+  };
+
   // Load map data from the custom hook
-  const { usGeoJson, isMapLoaded } = useMapData(selectedRegion, geographyLevel, mapState.selectedLayerService);
+  const { usGeoJson, isMapLoaded } = useMapData(
+    selectedRegion, 
+    geographyLevel, 
+    mapState.dataGranularity === 'zip' 
+      ? ARCGIS_SERVICES.zipCodes 
+      : ARCGIS_SERVICES.censusTracts
+  );
 
   // Listen for search results from custom event
   useEffect(() => {
@@ -141,11 +196,16 @@ const LeafletMap = ({
           setLeafletMap={mapState.setLeafletMap}
           mapCenter={mapState.mapCenter}
           zoomLevel={mapState.zoomLevel}
+          initialBasemap="osm"
         >
           {mapState.leafletMap && (
             <MapLayers
               map={mapState.leafletMap}
-              selectedLayerService={mapState.selectedLayerService}
+              selectedLayerService={
+                mapState.dataGranularity === 'zip' 
+                  ? ARCGIS_SERVICES.zipCodes 
+                  : ARCGIS_SERVICES.censusTracts
+              }
               data={data}
               variable={variable}
               format={format}
@@ -171,14 +231,21 @@ const LeafletMap = ({
         onGranularityChange={(granularity) => {
           mapState.setDataGranularity(granularity);
           
-          // If changing to ZIP code, update the layer service
-          if (granularity === 'zip') {
-            mapState.setSelectedLayerService(ARCGIS_SERVICES.zipCodes);
-          } else if (geographyLevel === 'zip') {
-            // If we were on ZIP but now changing to tract, update the layer service
-            mapState.updateLayerService('tract');
-          }
+          // Change the layer service based on granularity
+          const serviceUrl = granularity === 'zip' 
+            ? ARCGIS_SERVICES.zipCodes 
+            : ARCGIS_SERVICES.censusTracts;
+          
+          mapState.setSelectedLayerService(serviceUrl);
+          
+          toast({
+            title: "Layer changed",
+            description: `Switched to ${granularity === 'zip' ? 'ZIP Code' : 'Census Tract'} layer`,
+            variant: "default",
+          });
         }}
+        onBasemapChange={handleBasemapChange}
+        currentBasemap={currentBasemap}
       />
     </div>
   );

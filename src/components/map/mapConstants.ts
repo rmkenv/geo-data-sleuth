@@ -30,8 +30,23 @@ export const CENSUS_GEOCODER = {
 
 // ArcGIS Query services
 export const ARCGIS_SERVICES = {
-  zipCodes: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Zip_Code_Areas/FeatureServer/0',
+  zipCodes: 'https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Census_ZIP_Code_Tabulation_Areas_2010_v1/FeatureServer/0',
+  censusTracts: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Tracts/FeatureServer/0',
   censusBlocks: 'https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/US_Census_Blocks_v1/FeatureServer/0'
+};
+
+// Basemap tile URLs
+export const BASEMAPS = {
+  osm: {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19
+  },
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+    maxZoom: 19
+  }
 };
 
 // Fallback GeoJSON sources

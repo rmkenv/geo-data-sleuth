@@ -1,12 +1,14 @@
 
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
+import { BASEMAPS } from './mapConstants';
 
 interface MapContainerProps {
   mapRef: React.RefObject<HTMLDivElement>;
   setLeafletMap: (map: L.Map) => void;
   mapCenter: [number, number];
   zoomLevel: number;
+  initialBasemap?: string;
   children?: React.ReactNode;
 }
 
@@ -14,7 +16,8 @@ const MapContainer = ({
   mapRef, 
   setLeafletMap, 
   mapCenter, 
-  zoomLevel, 
+  zoomLevel,
+  initialBasemap = 'osm',
   children 
 }: MapContainerProps) => {
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -42,10 +45,10 @@ const MapContainer = ({
           zoomControl: true
         });
         
-        // Add base OSM layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-          maxZoom: 19
+        // Add base layer - will be managed by the parent component
+        L.tileLayer(BASEMAPS[initialBasemap as keyof typeof BASEMAPS].url, {
+          attribution: BASEMAPS[initialBasemap as keyof typeof BASEMAPS].attribution,
+          maxZoom: BASEMAPS[initialBasemap as keyof typeof BASEMAPS].maxZoom
         }).addTo(mapInstanceRef.current);
 
         // Share the map instance with parent
@@ -75,7 +78,7 @@ const MapContainer = ({
         }
       }
     };
-  }, [mapRef, setLeafletMap, mapCenter, zoomLevel]);
+  }, [mapRef, setLeafletMap, mapCenter, zoomLevel, initialBasemap]);
 
   // Update map view when center or zoom changes
   useEffect(() => {
