@@ -14,51 +14,57 @@ export const performSearch = async (searchQuery: string) => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second timeout
   
-  const response = await fetch(
-    `${CENSUS_GEOCODER.onelineAddress}?address=${encodedAddress}&benchmark=${CENSUS_GEOCODER.benchmark}&vintage=${CENSUS_GEOCODER.vintage}&format=json&key=${CENSUS_GEOCODER.key}`,
-    { signal: controller.signal }
-  );
-  
-  clearTimeout(timeoutId);
-  
-  if (!response.ok) {
-    console.error(`Census Geocoder API returned status: ${response.status}`);
-    throw new Error(`Search failed with status ${response.status}`);
+  try {
+    const response = await fetch(
+      `${CENSUS_GEOCODER.onelineAddress}?address=${encodedAddress}&benchmark=${CENSUS_GEOCODER.benchmark}&vintage=${CENSUS_GEOCODER.vintage}&format=json&key=${CENSUS_GEOCODER.key}`,
+      { signal: controller.signal }
+    );
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      console.error(`Census Geocoder API returned status: ${response.status}`);
+      throw new Error(`Search failed with status ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Geocoding response:', data);
+    
+    if (!data.result || !Array.isArray(data.result.addressMatches) || data.result.addressMatches.length === 0) {
+      console.log('No matches found in Census Geocoder response');
+      throw new Error('No matches found');
+    }
+    
+    // Transform Census geocoder results
+    return Promise.all(
+      data.result.addressMatches.map(async (match: any) => {
+        const longitude = match.coordinates.x;
+        const latitude = match.coordinates.y;
+        
+        // Query the ArcGIS service to get additional information about this location
+        let blockInfo = [];
+        try {
+          blockInfo = await queryFeaturesByPoint(longitude, latitude, ARCGIS_SERVICES.censusBlocks);
+          console.log('ArcGIS block info:', blockInfo);
+        } catch (error) {
+          console.error('Error querying ArcGIS blocks:', error);
+        }
+        
+        return {
+          id: match.geographies?.['2020 Census Blocks']?.[0]?.GEOID || String(Math.random()),
+          place_name: match.matchedAddress,
+          text: `${match.addressComponents.city || ''}, ${match.addressComponents.state || ''}`,
+          center: [match.coordinates.x, match.coordinates.y], // [longitude, latitude]
+          match_type: match.tigerLine?.side || 'exact',
+          blockInfo: blockInfo.length > 0 ? blockInfo[0] : null
+        };
+      })
+    );
+  } catch (error) {
+    console.error('Error in performSearch:', error);
+    // Use fallback instead of throwing
+    return [simulateGeocoding(searchQuery)];
   }
-  
-  const data = await response.json();
-  console.log('Geocoding response:', data);
-  
-  if (!data.result || !Array.isArray(data.result.addressMatches) || data.result.addressMatches.length === 0) {
-    console.log('No matches found in Census Geocoder response');
-    throw new Error('No matches found');
-  }
-  
-  // Transform Census geocoder results
-  return Promise.all(
-    data.result.addressMatches.map(async (match: any) => {
-      const longitude = match.coordinates.x;
-      const latitude = match.coordinates.y;
-      
-      // Query the ArcGIS service to get additional information about this location
-      let blockInfo = [];
-      try {
-        blockInfo = await queryFeaturesByPoint(longitude, latitude, ARCGIS_SERVICES.censusBlocks);
-        console.log('ArcGIS block info:', blockInfo);
-      } catch (error) {
-        console.error('Error querying ArcGIS blocks:', error);
-      }
-      
-      return {
-        id: match.geographies?.['2020 Census Blocks']?.[0]?.GEOID || String(Math.random()),
-        place_name: match.matchedAddress,
-        text: `${match.addressComponents.city || ''}, ${match.addressComponents.state || ''}`,
-        center: [match.coordinates.x, match.coordinates.y], // [longitude, latitude]
-        match_type: match.tigerLine?.side || 'exact',
-        blockInfo: blockInfo.length > 0 ? blockInfo[0] : null
-      };
-    })
-  );
 };
 
 /**

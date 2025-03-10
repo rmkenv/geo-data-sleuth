@@ -26,13 +26,6 @@ export const useMapData = (
         setError(null);
         console.log(`Fetching GeoJSON data for ${geographyLevel} from ${selectedLayerService}`);
         
-        // Determine if we're using the new ArcGIS services
-        const isArcGisService = 
-          selectedLayerService === ARCGIS_SERVICES.zipCodes || 
-          selectedLayerService === ARCGIS_SERVICES.censusBlocks ||
-          selectedLayerService === TIGERWEB_SERVICES.zip ||
-          selectedLayerService === TIGERWEB_SERVICES.blocks;
-
         // Build the query URL for the service
         const queryParams = new URLSearchParams({
           f: 'geojson',
@@ -43,20 +36,21 @@ export const useMapData = (
         if (selectedRegion && geographyLevel !== 'state') {
           // If a region is selected and we're not at the state level,
           // filter by the parent geography
-          if (isArcGisService) {
-            // For ArcGIS services
+          if (geographyLevel === 'county') {
+            queryParams.set('where', `STATE_FIPS='${selectedRegion}'`);
+          } else if (geographyLevel === 'tract' || geographyLevel === 'blockGroup') {
             queryParams.set('where', `STATE='${selectedRegion}'`);
-          } else {
-            // For TigerWeb services
+          } else if (geographyLevel === 'block') {
             queryParams.set('where', `STATE='${selectedRegion}'`);
+          } else if (geographyLevel === 'zip') {
+            // ZIP codes don't usually have state field in the same way
+            queryParams.set('where', `STATE_FIPS='${selectedRegion}'`);
           }
           console.log(`Filtering by STATE=${selectedRegion}`);
         }
         
-        // For ArcGIS services, limit the number of features to avoid performance issues
-        if (isArcGisService) {
-          queryParams.set('resultRecordCount', '1000');
-        }
+        // Limit the number of features to avoid performance issues
+        queryParams.set('resultRecordCount', '1000');
         
         const url = `${selectedLayerService}/query?${queryParams.toString()}`;
         console.log(`Request URL: ${url}`);
