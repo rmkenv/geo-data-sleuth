@@ -1,4 +1,3 @@
-
 import { CENSUS_GEOCODER, ARCGIS_SERVICES } from '../mapConstants';
 import { queryFeaturesByPoint } from '@/lib/arcgisService';
 
@@ -44,10 +43,10 @@ export const performSearch = async (searchQuery: string) => {
         // Query the ArcGIS service to get additional information about this location
         let blockInfo = [];
         try {
-          blockInfo = await queryFeaturesByPoint(longitude, latitude, ARCGIS_SERVICES.censusBlocks);
-          console.log('ArcGIS block info:', blockInfo);
+          blockInfo = await queryFeaturesByPoint(longitude, latitude, ARCGIS_SERVICES.censusTracts);
+          console.log('ArcGIS tract info:', blockInfo);
         } catch (error) {
-          console.error('Error querying ArcGIS blocks:', error);
+          console.error('Error querying ArcGIS tracts:', error);
         }
         
         return {

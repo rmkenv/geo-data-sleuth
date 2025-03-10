@@ -29,7 +29,7 @@ export const buildArcGisQuery = (
 export const queryFeaturesByPoint = async (
   longitude: number,
   latitude: number,
-  serviceUrl: string = ARCGIS_SERVICES.censusBlocks
+  serviceUrl: string = ARCGIS_SERVICES.censusTracts
 ) => {
   const queryParams = new URLSearchParams({
     f: 'json',
@@ -65,7 +65,7 @@ export const queryFeaturesByPoint = async (
  */
 export const queryFeaturesByPolygon = async (
   polygonCoordinates: number[][], 
-  serviceUrl: string = ARCGIS_SERVICES.censusBlocks
+  serviceUrl: string = ARCGIS_SERVICES.censusTracts
 ) => {
   // Convert GeoJSON polygon coordinates to ArcGIS polygon format
   const rings = [polygonCoordinates.map(coord => [coord[0], coord[1]])];

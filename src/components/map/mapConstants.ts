@@ -1,3 +1,4 @@
+
 // Updated TIGERweb Services URLs - Using ArcGIS services
 export const TIGERWEB_SERVICES = {
   states: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_States_Generalized/FeatureServer/0',
@@ -30,7 +31,8 @@ export const CENSUS_GEOCODER = {
 // ArcGIS Query services - These are the main layers to query
 export const ARCGIS_SERVICES = {
   zipCodes: 'https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Census_ZIP_Code_Tabulation_Areas_2010_v1/FeatureServer/0',
-  censusTracts: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Tracts/FeatureServer/0'
+  censusTracts: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Tracts/FeatureServer/0',
+  censusBlocks: 'https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/US_Census_Blocks_v1/FeatureServer/0'
 };
 
 // Basemap tile URLs - Using reliable public sources
