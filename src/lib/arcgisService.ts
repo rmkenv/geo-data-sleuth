@@ -57,6 +57,13 @@ export const queryFeaturesByPoint = async (
     }
     
     const data = await response.json();
+    
+    // Check for errors in response
+    if (data.error) {
+      console.error('ArcGIS API error:', data.error);
+      throw new Error(`ArcGIS API error: ${data.error.message || 'Unknown error'}`);
+    }
+    
     console.log(`Found ${data.features?.length || 0} features at point`);
     return data.features || [];
   } catch (error) {
@@ -98,6 +105,13 @@ export const queryFeaturesByPolygon = async (
     }
     
     const data = await response.json();
+    
+    // Check for errors in response
+    if (data.error) {
+      console.error('ArcGIS API error:', data.error);
+      throw new Error(`ArcGIS API error: ${data.error.message || 'Unknown error'}`);
+    }
+    
     console.log(`Found ${data.features?.length || 0} features in polygon`);
     return data.features || [];
   } catch (error) {
@@ -121,13 +135,54 @@ export const arcGisToGeoJSON = (arcgisFeatures: any[]) => {
   console.log(`Converting ${arcgisFeatures.length} ArcGIS features to GeoJSON`);
   
   try {
+    const features = arcgisFeatures.map(feature => {
+      // Skip features without geometry
+      if (!feature.geometry) {
+        console.warn('Feature without geometry found, skipping');
+        return null;
+      }
+      
+      // Handle different geometry types
+      let geometry;
+      if (feature.geometry.rings) {
+        // Polygon
+        geometry = {
+          type: 'Polygon',
+          coordinates: feature.geometry.rings
+        };
+      } else if (feature.geometry.paths) {
+        // LineString
+        geometry = {
+          type: 'MultiLineString',
+          coordinates: feature.geometry.paths
+        };
+      } else if (feature.geometry.points) {
+        // MultiPoint
+        geometry = {
+          type: 'MultiPoint',
+          coordinates: feature.geometry.points
+        };
+      } else if (feature.geometry.x !== undefined && feature.geometry.y !== undefined) {
+        // Point
+        geometry = {
+          type: 'Point',
+          coordinates: [feature.geometry.x, feature.geometry.y]
+        };
+      } else {
+        console.warn('Unknown geometry type', feature.geometry);
+        return null;
+      }
+      
+      return {
+        type: 'Feature',
+        geometry: geometry,
+        properties: feature.attributes || {}
+      };
+    }).filter(Boolean); // Remove null entries
+    
     return {
       type: 'FeatureCollection',
-      features: arcgisFeatures.map(feature => ({
-        type: 'Feature',
-        geometry: feature.geometry,
-        properties: feature.attributes
-      }))
+      features: features
     };
   } catch (error) {
     console.error('Error converting ArcGIS to GeoJSON:', error);

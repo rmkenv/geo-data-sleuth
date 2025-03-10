@@ -33,23 +33,30 @@ const GeoJsonLayer = ({
     // Get style function for regions
     const regionStyleFunction = getRegionStyle(data, variable, geographyLevel);
 
-    // Find the Leaflet map instance
-    const mapContainer = document.getElementById('map-container');
-    if (!mapContainer) {
-      console.log('Map container not found');
+    // Find the Leaflet map instance from parent
+    const map = document.getElementById('map-container');
+    
+    if (!map || !(map as any)._leaflet_id) {
+      console.error('Map container not found or map not initialized');
       return;
     }
     
-    // Access the map instance safely with type assertion
-    const mapInstance = (mapContainer as any)._leaflet_instance;
-    if (!mapInstance) {
-      console.log('Leaflet map instance not found');
+    // Access the map instance safely
+    const mapInstance = L.DomUtil.get('map-container') as any;
+    if (!mapInstance || !mapInstance._leaflet_id) {
+      console.error('Leaflet map instance not found');
+      return;
+    }
+    
+    const leafletMap = L.map.getMap(mapInstance._leaflet_id);
+    if (!leafletMap) {
+      console.error('Could not retrieve Leaflet map instance');
       return;
     }
     
     // Remove existing GeoJSON layer if it exists
     if (geoJsonLayerRef.current) {
-      mapInstance.removeLayer(geoJsonLayerRef.current);
+      leafletMap.removeLayer(geoJsonLayerRef.current);
       geoJsonLayerRef.current = null;
     }
     
@@ -60,16 +67,16 @@ const GeoJsonLayer = ({
         onEachFeature: (feature, layer) => {
           // Add click handler
           layer.on({
-            click: (e) => handleFeatureClick(e, feature, layer, mapInstance),
+            click: (e) => handleFeatureClick(e, feature, layer, leafletMap),
             mouseover: (e) => handleFeatureMouseover(e, layer),
             mouseout: (e) => handleFeatureMouseout(e, layer, feature)
           });
         }
-      }).addTo(mapInstance);
+      }).addTo(leafletMap);
       
-      // Fit map to the GeoJSON bounds
+      // Fit map to the GeoJSON bounds if bounds are valid
       if (geoJsonLayerRef.current.getBounds().isValid()) {
-        mapInstance.fitBounds(geoJsonLayerRef.current.getBounds());
+        leafletMap.fitBounds(geoJsonLayerRef.current.getBounds());
       }
       
       console.log('GeoJSON layer added to map');
@@ -79,8 +86,8 @@ const GeoJsonLayer = ({
     
     // Cleanup function
     return () => {
-      if (mapInstance && geoJsonLayerRef.current) {
-        mapInstance.removeLayer(geoJsonLayerRef.current);
+      if (leafletMap && geoJsonLayerRef.current) {
+        leafletMap.removeLayer(geoJsonLayerRef.current);
         console.log('GeoJSON layer removed from map');
         geoJsonLayerRef.current = null;
       }
@@ -102,7 +109,7 @@ const GeoJsonLayer = ({
       // Get region identifier based on the geography level
       let regionId = '';
       if (geographyLevel === 'state') {
-        regionId = feature.properties.STATE || feature.properties.STATEFP || feature.properties.GEOID || feature.properties.name;
+        regionId = feature.properties.STATE || feature.properties.STATEFP || feature.properties.GEOID || feature.properties.name || feature.id;
       } else if (geographyLevel === 'county') {
         regionId = feature.properties.COUNTY || feature.properties.COUNTYFP || feature.properties.GEOID;
       } else if (geographyLevel === 'tract') {

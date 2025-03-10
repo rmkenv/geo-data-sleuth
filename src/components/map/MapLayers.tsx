@@ -36,6 +36,12 @@ const MapLayers = ({
   onRegionSelect,
   onAreaSelected
 }: MapLayersProps) => {
+  // Prevent rendering if map is not available
+  if (!map) {
+    console.log('Map instance not available for layers');
+    return null;
+  }
+
   return (
     <>
       <TigerWebLayer 
@@ -64,8 +70,8 @@ const MapLayers = ({
       
       <MapController
         map={map}
-        center={[0, 0]} // These will be set by the MapContainer component
-        zoom={0}        // These will be set by the MapContainer component
+        center={[39.8283, -98.5795]} // Default to US center
+        zoom={4}                     // Default zoom level
       />
     </>
   );

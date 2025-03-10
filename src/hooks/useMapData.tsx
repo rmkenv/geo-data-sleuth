@@ -7,7 +7,7 @@ import {
   ARCGIS_SERVICES
 } from '@/components/map/mapConstants';
 import { toast } from '@/components/ui/use-toast';
-import { arcGisToGeoJSON } from '@/lib/arcgisService';
+import { arcGisToGeoJSON, buildArcGisQuery } from '@/lib/arcgisService';
 
 export const useMapData = (
   selectedRegion: string | undefined,
@@ -38,17 +38,10 @@ export const useMapData = (
           }
         }
         
-        // Build the query URL with proper parameters
-        const queryParams = new URLSearchParams({
-          f: 'json',
-          outFields: '*',
-          where: whereClause,
-          outSR: '4326',
-          returnGeometry: 'true'
-        });
+        console.log(`Using where clause: ${whereClause}`);
         
-        // Add query parameters
-        const url = `${selectedLayerService}/query?${queryParams.toString()}`;
+        // Build the query URL with proper parameters
+        const url = buildArcGisQuery(selectedLayerService, whereClause, 1000);
         console.log(`Request URL: ${url}`);
         
         const response = await fetch(url);
@@ -59,6 +52,13 @@ export const useMapData = (
         }
         
         const data = await response.json();
+        
+        // Check for errors in response
+        if (data.error) {
+          console.error('ArcGIS API error:', data.error);
+          throw new Error(`ArcGIS API error: ${data.error.message || 'Unknown error'}`);
+        }
+        
         console.log(`Received ${data.features?.length || 0} features from ArcGIS`);
         
         // Convert ArcGIS JSON to GeoJSON format

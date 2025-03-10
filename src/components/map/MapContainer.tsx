@@ -26,20 +26,28 @@ const MapContainer = ({
   // Initialize the map
   useEffect(() => {
     if (!mapRef.current) {
-      console.error('Map ref not found');
+      console.error('Map container ref not found');
       return;
     }
 
-    // Initialize map if it doesn't exist
+    // Only initialize map if it doesn't exist
     if (!mapInstanceRef.current) {
       console.log('Initializing map with center:', mapCenter, 'zoom:', zoomLevel);
       
       try {
+        // Clear any existing map instance
+        if (mapRef.current._leaflet_id) {
+          console.log('Clearing existing Leaflet instance');
+          mapRef.current._leaflet_id = undefined;
+        }
+
+        // Create new map instance
         const map = L.map(mapRef.current, {
           center: mapCenter,
           zoom: zoomLevel,
           scrollWheelZoom: true,
-          zoomControl: true
+          zoomControl: true,
+          attributionControl: true
         });
         
         mapInstanceRef.current = map;
@@ -58,7 +66,7 @@ const MapContainer = ({
         // Share the map instance with parent
         setLeafletMap(map);
         
-        console.log('Map initialized successfully');
+        console.log('Map initialized successfully with ID:', map._leaflet_id);
       } catch (error) {
         console.error('Error initializing map:', error);
       }
