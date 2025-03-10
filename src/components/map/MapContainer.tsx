@@ -38,13 +38,15 @@ const MapContainer = ({
         // Clean up any existing map instances
         const existingMaps = document.querySelectorAll('.leaflet-container');
         existingMaps.forEach(container => {
-          // @ts-ignore - We know this might exist on the DOM element
-          if (container._leaflet_id) {
-            const map = L.map.getMap(container);
+          try {
+            // Use Leaflet's API to get the map associated with this container
+            const map = L.map.getMap(container as HTMLElement);
             if (map) {
               console.log('Cleaning up existing map instance');
               map.remove();
             }
+          } catch (e) {
+            console.error('Error cleaning up map:', e);
           }
         });
 

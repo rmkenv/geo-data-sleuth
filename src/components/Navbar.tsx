@@ -16,9 +16,6 @@ const Navbar = () => {
             <Link to="/" className="hover:text-primary-foreground/80 transition-colors">
               Dashboard
             </Link>
-            <Link to="/geocoding" className="hover:text-primary-foreground/80 transition-colors">
-              Address Geocoder
-            </Link>
           </div>
         </div>
         
