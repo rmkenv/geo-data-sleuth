@@ -101,16 +101,6 @@ const LeafletMap = ({
     mapState.selectedLayerService
   );
 
-  // Handle search results
-  const handleSearch = (results: any[]) => {
-    mapState.setSearchResults(results);
-    if (results.length > 0 && results[0].center) {
-      const [lng, lat] = results[0].center;
-      mapState.setMapCenter([lat, lng]);
-      mapState.setZoomLevel(12);
-    }
-  };
-
   // Handle layer change
   const handleLayerChange = (serviceUrl: string, level: string) => {
     console.log(`Layer changed to: ${serviceUrl}, level: ${level}`);
@@ -182,7 +172,6 @@ const LeafletMap = ({
         selectedRegion={selectedRegion}
         onRegionSelect={onRegionSelect}
         onLayerChange={handleLayerChange}
-        onSearch={handleSearch}
         onToolChange={mapState.setActiveTool}
         onGranularityChange={(granularity) => {
           console.log(`Granularity changed to: ${granularity}`);

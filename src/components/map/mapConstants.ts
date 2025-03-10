@@ -1,4 +1,3 @@
-
 // Updated TIGERweb Services URLs - Using ArcGIS services
 export const TIGERWEB_SERVICES = {
   states: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_States_Generalized/FeatureServer/0',
@@ -17,16 +16,6 @@ export const GEOGRAPHY_LEVELS = [
   { id: 'block', name: 'Census Blocks', service: TIGERWEB_SERVICES.blocks },
   { id: 'zip', name: 'ZIP Codes', service: TIGERWEB_SERVICES.zip }
 ];
-
-// Census Geocoder Services
-export const CENSUS_GEOCODER = {
-  onelineAddress: 'https://geocoding.geo.census.gov/geocoder/locations/onelineaddress',
-  address: 'https://geocoding.geo.census.gov/geocoder/locations/address',
-  coordinates: 'https://geocoding.geo.census.gov/geocoder/geographies/coordinates',
-  benchmark: '2020',
-  vintage: '2020',
-  key: '33ff48a144036b88ae3dcec421c8bdf908501554'
-};
 
 // ArcGIS Query services - These are the main layers to query
 export const ARCGIS_SERVICES = {
