@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { BASEMAPS } from './mapConstants';
@@ -35,10 +34,11 @@ const MapContainer = ({
       console.log('Initializing map with center:', mapCenter, 'zoom:', zoomLevel);
       
       try {
-        // Clear any existing map instance
-        if (mapRef.current._leaflet_id) {
-          console.log('Clearing existing Leaflet instance');
-          mapRef.current._leaflet_id = undefined;
+        // Check if there's an existing map instance
+        const existingMap = L.map.getMap(mapRef.current);
+        if (existingMap) {
+          console.log('Cleaning up existing map instance');
+          existingMap.remove();
         }
 
         // Create new map instance
