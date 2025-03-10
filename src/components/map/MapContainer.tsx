@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { BASEMAPS } from './mapConstants';
@@ -34,12 +35,18 @@ const MapContainer = ({
       console.log('Initializing map with center:', mapCenter, 'zoom:', zoomLevel);
       
       try {
-        // Check if there's an existing map instance
-        const existingMap = L.map.getMap(mapRef.current);
-        if (existingMap) {
-          console.log('Cleaning up existing map instance');
-          existingMap.remove();
-        }
+        // Clean up any existing map instances
+        const existingMaps = document.querySelectorAll('.leaflet-container');
+        existingMaps.forEach(container => {
+          // @ts-ignore - We know this might exist on the DOM element
+          if (container._leaflet_id) {
+            const map = L.map.getMap(container);
+            if (map) {
+              console.log('Cleaning up existing map instance');
+              map.remove();
+            }
+          }
+        });
 
         // Create new map instance
         const map = L.map(mapRef.current, {
@@ -66,7 +73,7 @@ const MapContainer = ({
         // Share the map instance with parent
         setLeafletMap(map);
         
-        console.log('Map initialized successfully with ID:', map._leaflet_id);
+        console.log('Map initialized successfully');
       } catch (error) {
         console.error('Error initializing map:', error);
       }
