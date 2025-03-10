@@ -36,6 +36,7 @@ const LeafletMap = ({
   const mapState = useMapState(geographyLevel, selectedRegion);
   const mapRef = useRef<HTMLDivElement>(null);
   const [currentBasemap, setCurrentBasemap] = useState('osm');
+  const [mapInitialized, setMapInitialized] = useState(false);
 
   // Fix default Leaflet icon issue
   useEffect(() => {
@@ -46,20 +47,29 @@ const LeafletMap = ({
       iconUrl: icon,
       shadowUrl: iconShadow
     });
+    
+    console.log('Leaflet icons fixed');
   }, []);
 
   // Update layer service when geography level changes
   useEffect(() => {
-    mapState.updateLayerService(geographyLevel);
-  }, [geographyLevel, mapState]);
+    if (mapInitialized) {
+      console.log(`Geography level changed to: ${geographyLevel}`);
+      mapState.updateLayerService(geographyLevel);
+    }
+  }, [geographyLevel, mapState, mapInitialized]);
 
   // Update map view when selected region or geography level changes
   useEffect(() => {
-    mapState.updateMapView(selectedRegion, geographyLevel);
-  }, [selectedRegion, geographyLevel, mapState]);
+    if (mapInitialized) {
+      console.log(`Selected region changed to: ${selectedRegion}, geography level: ${geographyLevel}`);
+      mapState.updateMapView(selectedRegion, geographyLevel);
+    }
+  }, [selectedRegion, geographyLevel, mapState, mapInitialized]);
 
   // Handle basemap change
   const handleBasemapChange = (basemap: string) => {
+    console.log(`Changing basemap to: ${basemap}`);
     setCurrentBasemap(basemap);
     
     // Notification
@@ -70,13 +80,25 @@ const LeafletMap = ({
     });
   };
 
+  // Set up the map
+  const handleMapSetup = (map: L.Map) => {
+    console.log('Map setup complete, setting map instance');
+    mapState.setLeafletMap(map);
+    setMapInitialized(true);
+    
+    // Force a rerender of the layers when the map is ready
+    const serviceUrl = mapState.dataGranularity === 'zip' 
+      ? ARCGIS_SERVICES.zipCodes 
+      : ARCGIS_SERVICES.censusTracts;
+    
+    mapState.setSelectedLayerService(serviceUrl);
+  };
+
   // Load map data from the custom hook
   const { usGeoJson, isMapLoaded } = useMapData(
     selectedRegion, 
     geographyLevel, 
-    mapState.dataGranularity === 'zip' 
-      ? ARCGIS_SERVICES.zipCodes 
-      : ARCGIS_SERVICES.censusTracts
+    mapState.selectedLayerService
   );
 
   // Handle search results
@@ -91,6 +113,7 @@ const LeafletMap = ({
 
   // Handle layer change
   const handleLayerChange = (serviceUrl: string, level: string) => {
+    console.log(`Layer changed to: ${serviceUrl}, level: ${level}`);
     mapState.setSelectedLayerService(serviceUrl);
   };
 
@@ -119,19 +142,19 @@ const LeafletMap = ({
       <div 
         ref={mapRef} 
         id="map-container"
-        className="h-full w-full" 
+        className="h-full w-full z-0" 
         style={{ borderRadius: '0 0 0.5rem 0.5rem' }} 
       />
       
       {mapRef.current && (
         <MapContainer 
           mapRef={mapRef}
-          setLeafletMap={mapState.setLeafletMap}
+          setLeafletMap={handleMapSetup}
           mapCenter={mapState.mapCenter}
           zoomLevel={mapState.zoomLevel}
           currentBasemap={currentBasemap}
         >
-          {mapState.leafletMap && (
+          {mapState.leafletMap && mapInitialized && (
             <MapLayers
               map={mapState.leafletMap}
               selectedLayerService={
@@ -162,6 +185,7 @@ const LeafletMap = ({
         onSearch={handleSearch}
         onToolChange={mapState.setActiveTool}
         onGranularityChange={(granularity) => {
+          console.log(`Granularity changed to: ${granularity}`);
           mapState.setDataGranularity(granularity);
           
           // Change the layer service based on granularity

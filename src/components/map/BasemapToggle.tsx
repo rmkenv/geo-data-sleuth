@@ -15,7 +15,12 @@ const BasemapToggle = ({ currentBasemap, onBasemapChange }: BasemapToggleProps) 
       <ToggleGroup 
         type="single" 
         value={currentBasemap} 
-        onValueChange={(value) => value && onBasemapChange(value)}
+        onValueChange={(value) => {
+          if (value) {
+            console.log(`Basemap toggle: changing to ${value}`);
+            onBasemapChange(value);
+          }
+        }}
         className="bg-white rounded border border-gray-200"
       >
         <ToggleGroupItem value="osm" aria-label="OpenStreetMap" className="flex items-center px-2 py-1">

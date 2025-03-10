@@ -1,7 +1,6 @@
 
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { FALLBACK_GEOJSON } from './mapConstants';
 
 interface TigerWebLayerProps {
   map: L.Map | null;
@@ -9,7 +8,7 @@ interface TigerWebLayerProps {
 }
 
 const TigerWebLayer = ({ map, selectedLayerService }: TigerWebLayerProps) => {
-  const layerRef = useRef<L.TileLayer | null>(null);
+  const layerRef = useRef<L.TileLayer.WMS | null>(null);
   
   useEffect(() => {
     if (!map) {
@@ -17,7 +16,7 @@ const TigerWebLayer = ({ map, selectedLayerService }: TigerWebLayerProps) => {
       return;
     }
 
-    console.log(`Loading layer from: ${selectedLayerService}`);
+    console.log(`Loading WMS layer from: ${selectedLayerService}`);
 
     // Clear previous layer
     if (layerRef.current) {
@@ -25,8 +24,19 @@ const TigerWebLayer = ({ map, selectedLayerService }: TigerWebLayerProps) => {
       layerRef.current = null;
     }
 
-    // We don't add a WMS layer here, the GeoJSON layer will be added separately
-    console.log('Layer setup complete');
+    try {
+      // Add WMS layer
+      layerRef.current = L.tileLayer.wms(selectedLayerService + '/MapServer/WMSServer', {
+        layers: '0',
+        format: 'image/png',
+        transparent: true,
+        version: '1.1.0'
+      }).addTo(map);
+      
+      console.log('WMS Layer added successfully');
+    } catch (error) {
+      console.error('Error adding WMS layer:', error);
+    }
 
     return () => {
       if (map && layerRef.current) {

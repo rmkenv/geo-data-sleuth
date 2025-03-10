@@ -1,3 +1,4 @@
+
 // Updated TIGERweb Services URLs - Using ArcGIS services
 export const TIGERWEB_SERVICES = {
   states: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_States_Generalized/FeatureServer/0',
@@ -5,7 +6,7 @@ export const TIGERWEB_SERVICES = {
   tracts: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Tracts/FeatureServer/0',
   blockGroups: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Block_Groups/FeatureServer/0',
   blocks: 'https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/US_Census_Blocks_v1/FeatureServer/0',
-  zip: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Zip_Code_Areas/FeatureServer/0'
+  zip: 'https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Census_ZIP_Code_Tabulation_Areas_2010_v1/FeatureServer/0'
 };
 
 export const GEOGRAPHY_LEVELS = [
@@ -27,14 +28,14 @@ export const CENSUS_GEOCODER = {
   key: '33ff48a144036b88ae3dcec421c8bdf908501554'
 };
 
-// ArcGIS Query services - Updated per user's request
+// ArcGIS Query services - These are the main layers to query
 export const ARCGIS_SERVICES = {
   zipCodes: 'https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Census_ZIP_Code_Tabulation_Areas_2010_v1/FeatureServer/0',
   censusTracts: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Tracts/FeatureServer/0',
   censusBlocks: 'https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/US_Census_Blocks_v1/FeatureServer/0'
 };
 
-// Basemap tile URLs - Ensuring these are correct and accessible
+// Basemap tile URLs - Using reliable public sources
 export const BASEMAPS = {
   osm: {
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',

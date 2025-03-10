@@ -23,6 +23,7 @@ const MapContainer = ({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const basemapLayerRef = useRef<L.TileLayer | null>(null);
 
+  // Initialize the map
   useEffect(() => {
     if (!mapRef.current) {
       console.error('Map ref not found');
@@ -31,24 +32,31 @@ const MapContainer = ({
 
     // Initialize map if it doesn't exist
     if (!mapInstanceRef.current) {
-      console.log('Initializing map');
+      console.log('Initializing map with center:', mapCenter, 'zoom:', zoomLevel);
       
       try {
-        mapInstanceRef.current = L.map(mapRef.current, {
+        const map = L.map(mapRef.current, {
           center: mapCenter,
           zoom: zoomLevel,
           scrollWheelZoom: true,
           zoomControl: true
         });
         
+        mapInstanceRef.current = map;
+        
         // Add initial base layer
-        basemapLayerRef.current = L.tileLayer(BASEMAPS[currentBasemap].url, {
-          attribution: BASEMAPS[currentBasemap].attribution,
-          maxZoom: BASEMAPS[currentBasemap].maxZoom
-        }).addTo(mapInstanceRef.current);
+        if (BASEMAPS[currentBasemap]) {
+          console.log(`Adding initial basemap: ${currentBasemap}`);
+          basemapLayerRef.current = L.tileLayer(BASEMAPS[currentBasemap].url, {
+            attribution: BASEMAPS[currentBasemap].attribution,
+            maxZoom: BASEMAPS[currentBasemap].maxZoom
+          }).addTo(map);
+        } else {
+          console.error(`Basemap not found: ${currentBasemap}`);
+        }
 
         // Share the map instance with parent
-        setLeafletMap(mapInstanceRef.current);
+        setLeafletMap(map);
         
         console.log('Map initialized successfully');
       } catch (error) {
@@ -70,14 +78,16 @@ const MapContainer = ({
   // Update map view when center or zoom changes
   useEffect(() => {
     if (mapInstanceRef.current) {
+      console.log(`Setting map view to ${mapCenter} at zoom ${zoomLevel}`);
       mapInstanceRef.current.setView(mapCenter, zoomLevel);
-      console.log(`Map view updated to ${mapCenter} at zoom ${zoomLevel}`);
     }
   }, [mapCenter, zoomLevel]);
 
   // Update basemap when currentBasemap changes
   useEffect(() => {
     if (mapInstanceRef.current && BASEMAPS[currentBasemap]) {
+      console.log(`Changing basemap to ${currentBasemap}`);
+      
       // Remove current basemap layer
       if (basemapLayerRef.current) {
         mapInstanceRef.current.removeLayer(basemapLayerRef.current);
@@ -90,6 +100,8 @@ const MapContainer = ({
       }).addTo(mapInstanceRef.current);
       
       console.log(`Basemap changed to ${currentBasemap}`);
+    } else if (!BASEMAPS[currentBasemap]) {
+      console.error(`Invalid basemap: ${currentBasemap}`);
     }
   }, [currentBasemap]);
 
