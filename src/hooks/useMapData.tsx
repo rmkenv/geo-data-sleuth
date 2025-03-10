@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { 
   TIGERWEB_SERVICES, 
   GEOGRAPHY_LEVELS,
-  FALLBACK_GEOJSON
+  FALLBACK_GEOJSON,
+  ARCGIS_SERVICES
 } from '@/components/map/mapConstants';
 import { toast } from '@/components/ui/use-toast';
 
@@ -17,7 +18,7 @@ export const useMapData = (
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Load GeoJSON data from TIGERweb services
+  // Load GeoJSON data from ArcGIS services
   useEffect(() => {
     const fetchGeoJson = async () => {
       try {
@@ -25,7 +26,14 @@ export const useMapData = (
         setError(null);
         console.log(`Fetching GeoJSON data for ${geographyLevel} from ${selectedLayerService}`);
         
-        // Build the query URL for the ArcGIS REST service
+        // Determine if we're using the new ArcGIS services
+        const isArcGisService = 
+          selectedLayerService === ARCGIS_SERVICES.zipCodes || 
+          selectedLayerService === ARCGIS_SERVICES.censusBlocks ||
+          selectedLayerService === TIGERWEB_SERVICES.zip ||
+          selectedLayerService === TIGERWEB_SERVICES.blocks;
+
+        // Build the query URL for the service
         const queryParams = new URLSearchParams({
           f: 'geojson',
           outFields: '*',
@@ -35,15 +43,26 @@ export const useMapData = (
         if (selectedRegion && geographyLevel !== 'state') {
           // If a region is selected and we're not at the state level,
           // filter by the parent geography
-          queryParams.set('where', `STATE='${selectedRegion}'`);
+          if (isArcGisService) {
+            // For ArcGIS services
+            queryParams.set('where', `STATE='${selectedRegion}'`);
+          } else {
+            // For TigerWeb services
+            queryParams.set('where', `STATE='${selectedRegion}'`);
+          }
           console.log(`Filtering by STATE=${selectedRegion}`);
+        }
+        
+        // For ArcGIS services, limit the number of features to avoid performance issues
+        if (isArcGisService) {
+          queryParams.set('resultRecordCount', '1000');
         }
         
         const url = `${selectedLayerService}/query?${queryParams.toString()}`;
         console.log(`Request URL: ${url}`);
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15-second timeout
         
         const response = await fetch(url, { signal: controller.signal });
         clearTimeout(timeoutId);
@@ -70,7 +89,7 @@ export const useMapData = (
           description: "Using fallback data sources",
           variant: "default",
         });
-        // Fallback to the original GitHub hosted files if the TIGERweb service fails
+        // Fallback to the original GitHub hosted files if the service fails
         fetchFallbackGeoJson();
       }
     };
@@ -83,6 +102,9 @@ export const useMapData = (
         geoJsonUrl = FALLBACK_GEOJSON.counties;
       } else if (geographyLevel === 'tract' || geographyLevel === 'blockGroup') {
         geoJsonUrl = FALLBACK_GEOJSON.tracts;
+      } else if (geographyLevel === 'zip') {
+        // No good fallback for zip codes, so we'll use states
+        geoJsonUrl = FALLBACK_GEOJSON.states;
       }
       
       console.log(`Fetching fallback from: ${geoJsonUrl}`);

@@ -1,12 +1,12 @@
 
-// Updated TIGERweb Services URLs - Using corrected endpoints
+// Updated TIGERweb Services URLs - Using ArcGIS services
 export const TIGERWEB_SERVICES = {
   states: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Census2020/MapServer/84',
   counties: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Census2020/MapServer/86',
   tracts: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Census2020/MapServer/28',
   blockGroups: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Census2020/MapServer/32',
-  blocks: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Census2020/MapServer/26',
-  zip: 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/26'
+  blocks: 'https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/US_Census_Blocks_v1/FeatureServer/0',
+  zip: 'https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Census_ZIP_Code_Tabulation_Areas_2010_v1/FeatureServer/0'
 };
 
 export const GEOGRAPHY_LEVELS = [
@@ -26,6 +26,12 @@ export const CENSUS_GEOCODER = {
   benchmark: '2020',
   vintage: '2020',
   key: '33ff48a144036b88ae3dcec421c8bdf908501554'
+};
+
+// ArcGIS Query services
+export const ARCGIS_SERVICES = {
+  zipCodes: 'https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Census_ZIP_Code_Tabulation_Areas_2010_v1/FeatureServer/0',
+  censusBlocks: 'https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/US_Census_Blocks_v1/FeatureServer/0'
 };
 
 // Fallback GeoJSON sources

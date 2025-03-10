@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
-import { TIGERWEB_SERVICES, GEOGRAPHY_LEVELS } from './mapConstants';
+import { TIGERWEB_SERVICES, GEOGRAPHY_LEVELS, ARCGIS_SERVICES } from './mapConstants';
 import MapController from './MapController';
 import MapLegend from './MapLegend';
 import GeographyBreadcrumb from './GeographyBreadcrumb';
@@ -92,6 +92,9 @@ const LeafletMap = ({
       } else if (geographyLevel === 'block') {
         setZoomLevel(12);
         setMapCenter([37.7749, -122.4194]);
+      } else if (geographyLevel === 'zip') {
+        setZoomLevel(8);
+        setMapCenter([37.7749, -122.4194]);
       }
     } else {
       // Reset to US view
@@ -156,6 +159,18 @@ const LeafletMap = ({
   // Handle granularity change
   const handleGranularityChange = (granularity: string) => {
     setDataGranularity(granularity);
+    
+    // If changing to ZIP code, update the layer service
+    if (granularity === 'zip') {
+      setSelectedLayerService(ARCGIS_SERVICES.zipCodes);
+    } else if (geographyLevel === 'zip') {
+      // If we were on ZIP but now changing to tract, we need to update the layer service
+      const currentLevel = GEOGRAPHY_LEVELS.find(level => level.id === 'tract');
+      if (currentLevel) {
+        setSelectedLayerService(currentLevel.service);
+      }
+    }
+    
     toast({
       title: "Data granularity changed",
       description: `Data will be displayed at ${granularity === 'zip' ? 'ZIP code' : 'Census tract'} level`,

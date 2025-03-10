@@ -1,10 +1,12 @@
+
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Maximize2, Lasso } from 'lucide-react';
-import { CENSUS_GEOCODER } from './mapConstants';
+import { CENSUS_GEOCODER, ARCGIS_SERVICES } from './mapConstants';
 import { toast } from '@/components/ui/use-toast';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { queryFeaturesByPoint } from '@/lib/arcgisService';
 
 interface MapSearchProps {
   onSearchResults: (results: any[]) => void;
@@ -35,7 +37,7 @@ const MapSearch = ({
       
       // For better reliability, set a timeout for the fetch request
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5-second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second timeout
       
       const response = await fetch(
         `${CENSUS_GEOCODER.onelineAddress}?address=${encodedAddress}&benchmark=${CENSUS_GEOCODER.benchmark}&vintage=${CENSUS_GEOCODER.vintage}&format=json&key=${CENSUS_GEOCODER.key}`,
@@ -64,17 +66,44 @@ const MapSearch = ({
         throw new Error('No matches found');
       }
       
-      // Transform Census geocoder results to match the expected format
-      const transformedResults = data.result.addressMatches.map((match: any) => ({
-        id: match.geographies?.['2020 Census Blocks']?.[0]?.GEOID || String(Math.random()),
-        place_name: match.matchedAddress,
-        text: `${match.addressComponents.city || ''}, ${match.addressComponents.state || ''}`,
-        center: [match.coordinates.x, match.coordinates.y], // [longitude, latitude]
-        match_type: match.tigerLine?.side || 'exact'
-      }));
+      // Transform Census geocoder results
+      const transformedResults = await Promise.all(
+        data.result.addressMatches.map(async (match: any) => {
+          const longitude = match.coordinates.x;
+          const latitude = match.coordinates.y;
+          
+          // Query the ArcGIS service to get additional information about this location
+          let blockInfo = [];
+          try {
+            blockInfo = await queryFeaturesByPoint(longitude, latitude, ARCGIS_SERVICES.censusBlocks);
+            console.log('ArcGIS block info:', blockInfo);
+          } catch (error) {
+            console.error('Error querying ArcGIS blocks:', error);
+          }
+          
+          return {
+            id: match.geographies?.['2020 Census Blocks']?.[0]?.GEOID || String(Math.random()),
+            place_name: match.matchedAddress,
+            text: `${match.addressComponents.city || ''}, ${match.addressComponents.state || ''}`,
+            center: [match.coordinates.x, match.coordinates.y], // [longitude, latitude]
+            match_type: match.tigerLine?.side || 'exact',
+            blockInfo: blockInfo.length > 0 ? blockInfo[0] : null
+          };
+        })
+      );
       
-      console.log('Transformed results:', transformedResults);
+      console.log('Transformed results with ArcGIS data:', transformedResults);
       onSearchResults(transformedResults);
+      
+      // If we have block info, show it in a toast
+      if (transformedResults[0]?.blockInfo) {
+        const block = transformedResults[0].blockInfo;
+        toast({
+          title: "Location information",
+          description: `Census Block: ${block.attributes?.GEOID || 'Unknown'}`,
+          variant: "default",
+        });
+      }
     } catch (error) {
       console.error('Error during location search:', error);
       
@@ -94,7 +123,7 @@ const MapSearch = ({
     }
   };
 
-  // Local fallback geocoding function with expanded locations
+  // Local fallback geocoding function
   const simulateGeocoding = (address: string) => {
     const knownLocations: Record<string, [number, number]> = {
       // [longitude, latitude] format for consistency with API
